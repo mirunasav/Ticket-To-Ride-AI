@@ -6,6 +6,8 @@ namespace TicketToRide.Model.Cards
     {
         public TrainColor Color { get; set; }
 
+        public bool IsAvailable { get; set; } = true;
+
         public override string ToString()
         {
             return $"Train card color : {Color}";

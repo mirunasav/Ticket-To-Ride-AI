@@ -11,6 +11,8 @@ namespace TicketToRide.Model.GameBoard
 
         public int PlayerTurn { get; set; } = 0;
 
+        public GameState GameState { get; set; } = GameState.WaitingForPlayerMove;
+
         public Game(Board board, IList<Player> players)
         {
             this.Board = board;
@@ -42,6 +44,23 @@ namespace TicketToRide.Model.GameBoard
             }
         }
 
+        public void UpdateStateNextPlayerTurn()
+        {
+            GameState = GameState.WaitingForPlayerMove;
+            ChangePlayerTurn();
+        }
+
+        private void ChangePlayerTurn()
+        {
+            if(PlayerTurn == Players.Count - 1)
+            {
+                PlayerTurn = 0;
+                return;
+            }
+
+            PlayerTurn+= 1;
+        }
+      
         public ValidateActionMessage ValidateClaimRouteAction(
             int playerIndex, 
             City originCity, 

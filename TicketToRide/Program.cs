@@ -1,4 +1,6 @@
 
+using TicketToRide.Services;
+
 namespace TicketToRide
 {
     public class Program
@@ -8,6 +10,7 @@ namespace TicketToRide
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddSingleton<GameService>();
 
             builder.Services.AddControllers();
 

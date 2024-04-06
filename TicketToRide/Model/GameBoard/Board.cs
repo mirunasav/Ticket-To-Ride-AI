@@ -199,7 +199,6 @@ namespace TicketToRide.Model.GameBoard
             return cards;
         }
 
-        //after drawing a card from the face up deck
         private void RefillFaceUpDeck()
         {
             while (FaceUpDeck.Count < 5)
@@ -209,8 +208,8 @@ namespace TicketToRide.Model.GameBoard
             }
         }
 
-        //The 5 cards that are shown
-        private void PopulateFaceUpDeck()
+        //The 5 cards that are shown : after drawing a card from the face up deck
+        public void PopulateFaceUpDeck()
         {
             //this should only happen when the deck is exhausted
             if (Deck.Count < 5)
@@ -224,13 +223,23 @@ namespace TicketToRide.Model.GameBoard
 
             while (locomotiveCount >= 3)
             {
-                //Console.WriteLine(Messages.MoreThan3LocomotivesInFaceUpDeck);
 
                 DiscardPile.AddRange(FaceUpDeck);
                 FaceUpDeck.Clear();
 
                 RefillFaceUpDeck();
                 locomotiveCount = FaceUpDeck.Where(c => c.Color == TrainColor.Locomotive).Count();
+            }
+        }
+
+        public void ChangeFaceUpLocomotiveStatus(bool isAvailable)
+        {
+            foreach(var card in FaceUpDeck)
+            {
+                if (card.Color == TrainColor.Locomotive)
+                {
+                    card.IsAvailable = isAvailable;
+                }
             }
         }
 
