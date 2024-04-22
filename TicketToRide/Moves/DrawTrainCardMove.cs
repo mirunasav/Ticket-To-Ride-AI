@@ -6,43 +6,12 @@ using TicketToRide.Model.GameBoard;
 
 namespace TicketToRide.Moves
 {
-    public class DrawTrainCard : Move
+    public class DrawTrainCardMove : Move
     {
-        private int faceUpCardIndex = 0;
-        public DrawTrainCard(Game game, int playerIndex, int faceUpCardIndex) : base(game, playerIndex)
+        public int faceUpCardIndex { get; set; } = 0;
+        public DrawTrainCardMove(Game game, int playerIndex, int faceUpCardIndex) : base(game, playerIndex)
         {
             this.faceUpCardIndex = faceUpCardIndex;
-        }
-
-        public override MakeMoveResponse ValidateMove()
-        {
-            //check validity of face up index: to be in bounds + available
-            if ((faceUpCardIndex < 0 && faceUpCardIndex != -1) ||
-                faceUpCardIndex >= Game.Board.FaceUpDeck.Count
-                || (faceUpCardIndex != -1 && !Game.Board.FaceUpDeck.ElementAt(faceUpCardIndex).IsAvailable)) {
-                return new MakeMoveResponse
-                {
-                    IsValid = false,
-                    Message = InvalidMovesMessages.InvalidFaceUpCardIndex
-                };
-            }
-
-            if (Game.Board.Deck.Count == 0
-                && Game.Board.FaceUpDeck.Count == 0
-                && Game.Board.DiscardPile.Count == 0)
-            {
-                return new MakeMoveResponse
-                {
-                    IsValid = false,
-                    Message = InvalidMovesMessages.NotEnoughTrainCardsToDrawFrom
-                };
-            }
-
-            return new MakeMoveResponse
-            {
-                IsValid = true,
-                Message = ValidMovesMessages.PlayerDrawTrainCard
-            };
         }
 
         public override MakeMoveResponse Execute()

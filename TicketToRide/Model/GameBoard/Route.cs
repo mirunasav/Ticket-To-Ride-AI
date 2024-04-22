@@ -42,6 +42,20 @@ namespace TicketToRide.Model.GameBoard
             this.Color = TrainColor;
             this.Length = Length;
         }
+
+        public Route(int Origin, int Destination, int Color, int Length, bool IsClaimed, int ClaimedBy)
+        {
+            this.Origin = (City)Origin;
+            this.Destination = (City)Destination;
+            this.Color = (TrainColor)Color;
+            this.Length = Length;
+            this.IsClaimed = IsClaimed;
+            this.ClaimedBy = (PlayerColor)ClaimedBy;
+        }
+        public Route()
+        {
+        }
+
     }
 
 }

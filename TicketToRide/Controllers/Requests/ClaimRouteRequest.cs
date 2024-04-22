@@ -5,13 +5,10 @@ namespace TicketToRide.Controllers.Requests
     public class ClaimRouteRequest
     {
         public int PlayerIndex { get; set; }
-        public City Origin {  get; set; }
 
-        public City Destination {  get; set; }
+        public TrainColor ColorUsed { get; set; }
 
-        public TrainColor TrainColor { get; set; }
-
-        public int Length { get; set; }
-
+        //sau direct route?
+        public Model.GameBoard.Route Route { get; set; }
     }
 }

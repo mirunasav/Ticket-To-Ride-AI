@@ -50,64 +50,41 @@ namespace TicketToRide.Model.GameBoard
             ChangePlayerTurn();
         }
 
+        public Player GetPlayer(int playerIndex)
+        {
+            if(playerIndex < 0 || playerIndex >= Players.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(playerIndex));
+            }
+
+            return Players.ElementAt(playerIndex);
+        }
+
+        public void MarkRouteAsClaimed(Route route, Player player)
+        {
+            ArgumentNullException.ThrowIfNull(route);
+
+            var foundRoute = Board.Routes.GetRoute(route.Origin, route.Destination);
+
+            ArgumentNullException.ThrowIfNull(foundRoute);
+
+            foundRoute.IsClaimed = true;
+            foundRoute.ClaimedBy = player.Color;
+
+        }
+
+        #region private
         private void ChangePlayerTurn()
         {
-            if(PlayerTurn == Players.Count - 1)
+            if (PlayerTurn == Players.Count - 1)
             {
                 PlayerTurn = 0;
                 return;
             }
 
-            PlayerTurn+= 1;
-        }
-      
-        public ValidateActionMessage ValidateClaimRouteAction(
-            int playerIndex, 
-            City originCity, 
-            City destinationCity,
-            TrainColor trainColor,
-            int length)
-        {
-            if (playerIndex != PlayerTurn)
-            {
-                return new ValidateActionMessage
-                {
-                    IsValid = false,
-                    Message = "It is not this player's turn"
-                };
-            }
-
-
-            var isValid = Board.Routes.IsRouteValid(originCity, destinationCity, trainColor, length);
-
-            if (!isValid)
-            {
-                return new ValidateActionMessage
-                {
-                    IsValid = false,
-                    Message = "Route parameters are invalid"
-                };
-            }
-
-            var canClaimRoute = Board.Routes.CanClaimRoute(originCity, destinationCity, trainColor, length, Players.ElementAt(playerIndex));
-
-            if (!canClaimRoute)
-            {
-                return new ValidateActionMessage
-                {
-                    IsValid = false,
-                    Message = "Player does not have necessary train cards"
-                };
-            }
-
-            return new ValidateActionMessage
-            {
-                IsValid = true,
-                Message = "Player can claim route"
-            };
+            PlayerTurn += 1;
         }
 
-        #region private
         private ValidateActionMessage ValidateDrawTrainCardAction(int playerIndex)
         {
             return new ValidateActionMessage

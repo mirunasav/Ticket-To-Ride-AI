@@ -1,5 +1,4 @@
-﻿using System.Drawing;
-using TicketToRide.Model.Cards;
+﻿using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.Players;
 
@@ -14,7 +13,11 @@ namespace TicketToRide.Model.GameBoard
             Routes.Add(new Route(origin, destination, trainColor, length));
         }
 
-        public bool IsRouteValid(City origin, City destination, TrainColor trainColor, int length)
+        public bool IsRouteValid(
+            City origin,
+            City destination,
+            TrainColor trainColor = default,
+            int length = default)
         {
             var route = GetRoute(origin, destination, trainColor, length);
 
@@ -47,41 +50,89 @@ namespace TicketToRide.Model.GameBoard
             return route;
         }
 
-        public bool CanClaimRoute(City origin, City destination, TrainColor trainColor, int length, Player player)
+        public bool CanPlayerClaimRoute(Route route, Player player)
         {
-            var route = GetRoute(origin, destination, trainColor, length);
+            //aici? sau in alt serviciu
+            //vad daca ruta e claimed
+            if (route.IsClaimed)
+            {
+                //logica in plus pt jocuri cu 3-4 pers?
+                return false;
+            }
 
+            // vad daca are suficiente trenuri
+            if(player.RemainingTrains < route.Length)
+            {
+                return false;
+            }
+
+            //vad daca are cartonasele necesare
+            var trainColorsWhichCanBeUsed = ColorsWithWhichRouteCanBeClaimed(route, player);
+
+            return trainColorsWhichCanBeUsed.Count != 0;
+        }
+        public IList<TrainColor> ColorsWithWhichRouteCanBeClaimed(Route route, Player player)
+        {
             if (route == null)
             {
                 throw new ArgumentNullException(nameof(route));
             }
 
-            var playerTrainsOfNecessaryColor = 0;
+            var cardsWhichCanBeUsed = new List<TrainColor>();
+            var locomotiveCount = player.Hand.Count(card => card.Color == TrainColor.Locomotive);
 
             if (route.Color == TrainColor.Grey)
             {
-                //aici tb sa fie toate de aceeasi culoare, nu de orice culoare si amestecate
-                playerTrainsOfNecessaryColor = player.Hand.Count();
+                var groupedCardsByColor = player.Hand
+                     .Where(card => card.Color != TrainColor.Locomotive)
+                    .GroupBy(card => card.Color);
+
+                var groupsOfValidColors = groupedCardsByColor
+                    .Where(group => group.Count() + locomotiveCount >= route.Length).ToList();
+                
+                //return the colors of cards which can be used
+                foreach (var group in groupsOfValidColors)
+                {
+                    cardsWhichCanBeUsed.Add(group.Key);
+                }
             }
             else
             {
-                playerTrainsOfNecessaryColor = player.Hand
-                    .Where(card => card.Color == route.Color || card.Color == TrainColor.Locomotive).Count();
+               var playerTrainsOfNecessaryColor = player.Hand
+                    .Where(card => card.Color == route.Color).Count();
+
+                playerTrainsOfNecessaryColor += locomotiveCount;
+
+                if (playerTrainsOfNecessaryColor >= route.Length)
+                {
+                    cardsWhichCanBeUsed.Add(route.Color);
+                }
             }
 
-            return playerTrainsOfNecessaryColor >= route.Length;
+            return cardsWhichCanBeUsed;
         }
 
-        private Route? GetRoute(City origin, City destination, TrainColor trainColor, int length, bool isClaimed = false)
+        public Route? GetRoute(
+            City origin,
+            City destination,
+            TrainColor trainColor = default,
+            int length = default,
+            bool isClaimed = false)
         {
-            var route = Routes.FirstOrDefault(r => r.Origin == origin
-           && r.Destination == r.Destination
-           && r.Color == trainColor
-           && r.Length == length
-           && r.IsClaimed == isClaimed);
+            var routeQuery = Routes.AsQueryable()
+                .Where(r => r.Origin == origin && r.Destination == destination);
 
-            return route;
+            if (trainColor != default)
+            {
+                routeQuery = routeQuery.Where(r => r.Color == trainColor);
+            }
+
+            if (length != default)
+            {
+                routeQuery = routeQuery.Where(r => r.Length == length);
+            }
+
+            return routeQuery.FirstOrDefault();
         }
-
     }
 }

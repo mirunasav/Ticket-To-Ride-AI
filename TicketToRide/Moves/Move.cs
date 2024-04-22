@@ -1,6 +1,5 @@
 ﻿using TicketToRide.Controllers.Responses;
 using TicketToRide.Model.GameBoard;
-using TicketToRide.Model.Players;
 
 namespace TicketToRide.Moves
 {
@@ -9,8 +8,6 @@ namespace TicketToRide.Moves
         public Game Game { get; set; }
 
         public int playerIndex { get; set; }
-
-        public abstract MakeMoveResponse ValidateMove();
 
         public Move(Game game, int playerIndex)
         {

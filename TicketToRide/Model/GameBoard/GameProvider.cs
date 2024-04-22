@@ -1,21 +1,28 @@
 ﻿using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.Players;
-
 namespace TicketToRide.Model.GameBoard
 {
-    public class GameInitializer
+    public class GameProvider
     {
-        public static Game InitializeGame(int numberOfPlayers)
+        private Game game;
+
+        public Game InitializeGame(int numberOfPlayers)
         {
             var players = InitPlayers(numberOfPlayers);
             var board = new Board();
             DealCards(board, players);
-            return new Game(board, players);
+            game =  new Game(board, players);
+            return game;
+        }
+
+        public Game GetGame()
+        {
+            return game;
         }
 
         #region private
-        private static List<Player> InitPlayers(int numberOfPlayers)
+        private List<Player> InitPlayers(int numberOfPlayers)
         {
             var playerList = new List<Player>();
             var playerColors = new List<PlayerColor>();

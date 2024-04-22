@@ -1,4 +1,6 @@
-﻿using TicketToRide.Model.Cards;
+﻿using Microsoft.AspNetCore.Routing;
+using System.Numerics;
+using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
 
@@ -40,6 +42,79 @@ namespace TicketToRide.Model.Players
             }
         }
 
+        public int GetLocomotiveCount()
+        {
+           return Hand.Count(card => card.Color == TrainColor.Locomotive);
+        }
+
+        public int GetCardsOfColor(TrainColor color)
+        {
+            return Hand.Where(card => card.Color == color).Count();
+        }
+
+        public bool RemoveCards(TrainColor color, int count)
+        {
+            var cardsOfColor = GetCardsOfColor(color);
+            var locomotiveCount = GetLocomotiveCount();
+            cardsOfColor += locomotiveCount;
+           
+            if(cardsOfColor < count)
+            {
+                return false;
+            }
+
+            var removedCardCount  = 0;
+
+            List<int> indicesToRemove = new List<int>();
+
+            for (int i = 0; i < Hand.Count; i++)
+            {
+                if (Hand[i].Color == color)
+                {
+                    indicesToRemove.Add(i);
+                    removedCardCount++;
+
+                    if (indicesToRemove.Count == count)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            for (int i = indicesToRemove.Count - 1; i >= 0; i--)
+            {
+                Hand.RemoveAt(indicesToRemove[i]);
+            }
+
+            if(removedCardCount != count)
+            {
+                //we also need to remove locomotives
+                var remainingCardsToRemove = count - removedCardCount;
+
+                indicesToRemove.Clear();
+
+                for (int i = 0; i < Hand.Count; i++)
+                {
+                    if (Hand[i].Color == TrainColor.Locomotive)
+                    {
+                        indicesToRemove.Add(i);
+                        removedCardCount++;
+
+                        if (indicesToRemove.Count == remainingCardsToRemove)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                for (int i = indicesToRemove.Count - 1; i >= 0; i--)
+                {
+                    Hand.RemoveAt(indicesToRemove[i]);
+                }
+            }
+
+            return true;
+        }
         private void DrawTrainCard(Board board)
         {
             var cards = board.Deck.Pop(2);

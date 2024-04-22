@@ -1,4 +1,5 @@
 
+using TicketToRide.Model.GameBoard;
 using TicketToRide.Services;
 
 namespace TicketToRide
@@ -11,6 +12,9 @@ namespace TicketToRide
 
             // Add services to the container.
             builder.Services.AddSingleton<GameService>();
+            builder.Services.AddSingleton<RouteService>();
+            builder.Services.AddSingleton<MoveValidatorService>();
+            builder.Services.AddSingleton<GameProvider>();
 
             builder.Services.AddControllers();
 

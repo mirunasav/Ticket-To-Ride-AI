@@ -1,34 +1,52 @@
-﻿using System.Diagnostics;
+﻿using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
 using TicketToRide.Model.Constants;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
+using TicketToRide.Model.Players;
 using TicketToRide.Moves;
 
 namespace TicketToRide.Services
 {
     public class GameService
     {
+        private readonly GameProvider gameProvider;
+
+        private readonly MoveValidatorService moveValidatorService;
+
         private Game game;
+
+        public GameService(
+            GameProvider gameProvider,
+            MoveValidatorService moveValidatorService)
+        {
+            this.gameProvider = gameProvider;
+            this.moveValidatorService = moveValidatorService;
+        }
 
         public Game InitializeGame(int numberOfPlayers)
         {
-            game = GameInitializer.InitializeGame(numberOfPlayers);
+            game = gameProvider.InitializeGame(numberOfPlayers);
             return game;
         }
 
         public Game GetGameInstance()
         {
-            return game;
+            return gameProvider.GetGame();
+        }
+
+        public IList<Player> GetPlayers()
+        {
+            return game.Players;
         }
 
         public MakeMoveResponse DrawTrainCard(int playerIndex, int faceUpCardIndex)
         {
-            var drawTrainCardMove = new DrawTrainCard(game, playerIndex, faceUpCardIndex);
+            var drawTrainCardMove = new DrawTrainCardMove(game, playerIndex, faceUpCardIndex);
 
             var canMakeMoveMessage = CanMakeMove(drawTrainCardMove);
 
-            if(canMakeMoveMessage != ValidMovesMessages.Ok)
+            if (canMakeMoveMessage != ValidMovesMessages.Ok)
             {
                 return new MakeMoveResponse
                 {
@@ -37,20 +55,65 @@ namespace TicketToRide.Services
                 };
             }
 
-            return MakeMove(drawTrainCardMove);
+            var validateMove = moveValidatorService.ValidateDrawTrainCardMove(drawTrainCardMove);
+            if (!validateMove.IsValid)
+            {
+                return validateMove;
+            }
+
+            var response = drawTrainCardMove.Execute();
+
+            return response;
         }
 
-        private MakeMoveResponse MakeMove(Move move)
+        public MakeMoveResponse CanClaimRoute(CanClaimRouteRequest request)
         {
-            var validateMove = move.ValidateMove();
+            var canClaimRouteMove = new CanClaimRouteMove(game, request.PlayerIndex, request.Origin, request.Destination);
+
+            var canMakeMoveMessage = CanMakeMove(canClaimRouteMove);
+
+            if (canMakeMoveMessage != ValidMovesMessages.Ok)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = canMakeMoveMessage
+                };
+            }
+
+            var validateMove = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove);
+            if (!validateMove.IsValid)
+            {
+                return validateMove;
+            }
+
+            var response = canClaimRouteMove.Execute();
+            return response;
+        }
+
+        public MakeMoveResponse ClaimRoute(ClaimRouteRequest request)
+        {
+            var claimRouteMove = new ClaimRouteMove(game, request.PlayerIndex, request.ColorUsed, request.Route);
+
+            var canMakeMoveMessage = CanMakeMove(claimRouteMove);
+
+            if (canMakeMoveMessage != ValidMovesMessages.Ok)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = canMakeMoveMessage
+                };
+            }
+
+            var validateMove = moveValidatorService.ValidateClaimRouteMove(claimRouteMove);
 
             if (!validateMove.IsValid)
             {
                 return validateMove;
             }
 
-            var response = move.Execute();
-
+            var response = claimRouteMove.Execute();
             return response;
         }
 
@@ -76,10 +139,29 @@ namespace TicketToRide.Services
                 return InvalidMovesMessages.NotThisPlayersTurn;
             }
 
-            if (move is DrawTrainCard)
+            if (move is DrawTrainCardMove)
             {
                 if (game.GameState != GameState.WaitingForPlayerMove &&
+                    game.GameState != GameState.DecidingAction &&
                     game.GameState != GameState.DrawingTrainCards)
+                {
+                    return InvalidMovesMessages.InvalidActionForCurrentGameState;
+                }
+            }
+
+            if (move is CanClaimRouteMove)
+            {
+                if (game.GameState != GameState.WaitingForPlayerMove &&
+                    game.GameState != GameState.DecidingAction)
+                {
+                    return InvalidMovesMessages.InvalidActionForCurrentGameState;
+                }
+            }
+
+            if (move is ClaimRouteMove)
+            {
+                if (game.GameState != GameState.WaitingForPlayerMove &&
+                    game.GameState != GameState.DecidingAction)
                 {
                     return InvalidMovesMessages.InvalidActionForCurrentGameState;
                 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TicketToRide.Controllers.Requests;
+using TicketToRide.Controllers.Responses;
 using TicketToRide.Services;
 
 namespace TicketToRide.Controllers
@@ -39,6 +40,11 @@ namespace TicketToRide.Controllers
         }
 
         [HttpGet]
+        public IActionResult GetPlayers()
+        {
+            return Json(gameService.GetPlayers());
+        }
+        [HttpGet]
         public IActionResult DrawCard(int playerIndex, int faceUpCardIndex = -1)
         {
             var response = gameService.DrawTrainCard(playerIndex, faceUpCardIndex);
@@ -55,109 +61,56 @@ namespace TicketToRide.Controllers
                playerHand = game.Players[playerIndex].Hand,
                gameState = game.GameState
             });
+        }
 
-            //move this in a game service thingy
-            //var action = PlayerActions.DrawTrainCard;
+        //click on 2 cities; see whether that route can be claimed
+        [HttpGet]
+        public IActionResult CanClaimRoute([FromBody] CanClaimRouteRequest request)
+        {
+            var response = gameService.CanClaimRoute(request);
 
-            //var validateAction = game.ValidateAction(action, playerIndex);
+            if (!response.IsValid)
+            {
+                return BadRequest(response.Message); 
+            }
 
-            //if (!validateAction.IsValid)
-            //{
-            //    return BadRequest($"{validateAction.Message}");
-            //}
-
-            //game.Players.ElementAt(playerIndex).Act(action, game.Board);
-
-            //return Json(new {
-            //    boardDeck = game.Board.Deck,
-            //    faceUpDeck = game.Board.FaceUpDeck,
-            //    playerHand = game.Players[playerIndex].Hand
-            //});
+            if(response is CanClaimRouteResponse canClaimRouteResponse)
+            {
+                return Json(new
+                {
+                    Message = canClaimRouteResponse.Message,
+                    trainColors = canClaimRouteResponse.TrainColorsWhichCanBeUsed,
+                    route = canClaimRouteResponse.Route
+                });
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
 
         [HttpPost]
         public IActionResult ClaimRoute([FromBody] ClaimRouteRequest request)
         {
-            //if (!Enum.IsDefined(typeof(City), request.Origin))
-            //{
-            //    return BadRequest("Origin city is invalid");
-            //}
+            var response = gameService.ClaimRoute(request);
 
-            //if (!Enum.IsDefined(typeof(City), request.Destination))
-            //{
-            //    return BadRequest("Destination city is invalid");
-            //}
+            if (!response.IsValid)
+            {
+                return BadRequest(response.Message);
+            }
 
-            //var originCity = (City)request.Origin;
-            //var destinationCity = (City)request.Destination;
-
-            ////var action = new ClaimRouteAction(parameters, board); action.act();
-            ////var action = PlayerActions.DrawTrainCard;
-
-            //var validateAction = game.ValidateClaimRouteAction(request.PlayerIndex,
-            //    originCity,
-            //    destinationCity,
-            //    request.TrainColor,
-            //    request.Length);
-
-            //if (!validateAction.IsValid)
-            //{
-            //    return BadRequest($"{validateAction.Message}");
-            //}
-
-            //var player = game.Players.ElementAt(request.PlayerIndex);
-
-            //var claimedRoute = game.Board.Routes.ClaimRoute(originCity,
-            //    destinationCity,
-            //    request.TrainColor,
-            //    request.Length,
-            //    player);
-
-            //return Json(new
-            //{
-            //    ClaimedRoute = claimedRoute,
-            //    Player = player
-            //});            //if (!Enum.IsDefined(typeof(City), request.Origin))
-            //{
-            //    return BadRequest("Origin city is invalid");
-            //}
-
-            //if (!Enum.IsDefined(typeof(City), request.Destination))
-            //{
-            //    return BadRequest("Destination city is invalid");
-            //}
-
-            //var originCity = (City)request.Origin;
-            //var destinationCity = (City)request.Destination;
-
-            ////var action = new ClaimRouteAction(parameters, board); action.act();
-            ////var action = PlayerActions.DrawTrainCard;
-
-            //var validateAction = game.ValidateClaimRouteAction(request.PlayerIndex,
-            //    originCity,
-            //    destinationCity,
-            //    request.TrainColor,
-            //    request.Length);
-
-            //if (!validateAction.IsValid)
-            //{
-            //    return BadRequest($"{validateAction.Message}");
-            //}
-
-            //var player = game.Players.ElementAt(request.PlayerIndex);
-
-            //var claimedRoute = game.Board.Routes.ClaimRoute(originCity,
-            //    destinationCity,
-            //    request.TrainColor,
-            //    request.Length,
-            //    player);
-
-            //return Json(new
-            //{
-            //    ClaimedRoute = claimedRoute,
-            //    Player = player
-            //});
-            return Ok();
+            if (response is ClaimRouteResponse claimRouteResponse)
+            {
+                return Json(new
+                {
+                    Message = claimRouteResponse.Message,
+                    playerRemainingCards = claimRouteResponse.PlayerRemainingCards
+                });
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
     }
 }
