@@ -1,0 +1,98 @@
+body {
+    height: 100vh;
+    margin:0;
+    display: flex;
+}
+
+#player-index{
+    display: none;
+}
+
+#messages-container{
+    height: 10vh;
+}
+
+#game-container{
+    display: flex;
+    flex-direction:column;
+    flex-grow: 1;
+}
+
+#board-and-deck-container{
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 20px 20px;
+}
+
+canvas{
+    display: flex;
+    flex-direction: column; /* Display images in a column */
+    align-items: center; /* Center-align images horizontally */
+    order:1;
+}
+
+#train-card-deck-container{
+    display: flex;
+    flex-direction: column; /* Display images in a column */
+    align-items: center; /* Center-align images horizontally */
+}
+
+#player-train-cards-container img{
+    transform: rotate(90deg);
+    margin-inline: -20px;
+    z-index: -100;
+}
+
+#player-train-cards-container{
+   display : flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap:5px;
+    margin-top: 10px;
+    margin-right:180px;
+}
+
+.train-card-container{
+    position: relative;
+}
+
+.card-count{
+    position: absolute;
+    top: 50%; /* Position the count element in the middle of its parent */
+    left: 50%; /* Position the count element in the middle of its parent */
+    transform: translate(-50%, -50%); /* Center the count element relative to its parent */
+    z-index: 1; /* Ensure that the count element is above the image */
+    color:white;
+    font-size: 40px;
+    text-shadow: 
+        -1.5px -1.5px 0 black,  
+        1.5px -1.5px 0 black,
+        -1.5px 1.5px 0 black,
+        1.5px 1.5px 0 black;
+}
+.train-card-image{
+    margin: 3px 10px;
+    height:10vh;
+    width : 8vw;
+}
+
+.train-deck-image{
+    margin-bottom: 10px;
+    height:11vh;
+    width : 9vw;
+    border: 3px solid brown;
+}
+
+.train-card-image:hover {
+    cursor: pointer;
+    filter: brightness(115%); 
+}
+
+.train-card-image:active {
+    transform: translateY(2px);
+}
+#player-stats-container{
+    width: 50vw;
+}

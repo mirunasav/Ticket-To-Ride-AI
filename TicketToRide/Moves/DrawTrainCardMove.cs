@@ -25,7 +25,7 @@ namespace TicketToRide.Moves
                 Game.Board.FaceUpDeck.Remove(card);
 
                 //add to player hand
-                Game.Players.ElementAt(playerIndex).Hand.Add(card);
+                Game.GetPlayer(playerIndex).Hand.Add(card);
 
                 //refill faceup deck
                 Game.Board.PopulateFaceUpDeck();
@@ -41,7 +41,7 @@ namespace TicketToRide.Moves
                 var card = Game.Board.Deck.Pop(1);
 
                 //add to player hand
-                Game.Players.ElementAt(playerIndex).Hand.AddRange(card);
+                Game.GetPlayer(playerIndex).Hand.AddRange(card);
             }
 
             var newGameState = UpdateGameState(isTurnFinished: isTurnFinishedByLocomotiveDraw);

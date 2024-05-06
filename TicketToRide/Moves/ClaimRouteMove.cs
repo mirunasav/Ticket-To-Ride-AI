@@ -43,6 +43,9 @@ namespace TicketToRide.Moves
             //mark route as claimed
             Game.MarkRouteAsClaimed(Route, player);
 
+            //change gameState
+            Game.UpdateStateNextPlayerTurn();
+
             return new ClaimRouteResponse
             {
                 IsValid = true,

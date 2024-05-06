@@ -61,7 +61,7 @@ namespace TicketToRide.Model.GameBoard
             }
 
             // vad daca are suficiente trenuri
-            if(player.RemainingTrains < route.Length)
+            if (player.RemainingTrains < route.Length)
             {
                 return false;
             }
@@ -89,7 +89,7 @@ namespace TicketToRide.Model.GameBoard
 
                 var groupsOfValidColors = groupedCardsByColor
                     .Where(group => group.Count() + locomotiveCount >= route.Length).ToList();
-                
+
                 //return the colors of cards which can be used
                 foreach (var group in groupsOfValidColors)
                 {
@@ -98,8 +98,8 @@ namespace TicketToRide.Model.GameBoard
             }
             else
             {
-               var playerTrainsOfNecessaryColor = player.Hand
-                    .Where(card => card.Color == route.Color).Count();
+                var playerTrainsOfNecessaryColor = player.Hand
+                     .Where(card => card.Color == route.Color).Count();
 
                 playerTrainsOfNecessaryColor += locomotiveCount;
 
@@ -120,7 +120,8 @@ namespace TicketToRide.Model.GameBoard
             bool isClaimed = false)
         {
             var routeQuery = Routes.AsQueryable()
-                .Where(r => r.Origin == origin && r.Destination == destination);
+                .Where(r => (r.Origin == origin && r.Destination == destination)
+                || (r.Origin == destination && r.Destination == origin));
 
             if (trainColor != default)
             {

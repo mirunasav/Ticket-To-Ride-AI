@@ -16,5 +16,7 @@ namespace TicketToRide.Model.Constants
         public const string NotEnoughTrainPieces = "The player does not have enough train pieces left";
         public const string PlayerDoesNotHaveResources = "The player does not ahve the necessary train cards to claim this route";
         public const string InvalidColorForRoute = "This train color cannot be used to claim this route";
+
+        public const string NotEnoughDestinationCards = "There are not enough destination cards left";
     }
 }

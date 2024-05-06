@@ -1,6 +1,5 @@
 ﻿namespace TicketToRide.Model.Enums
 {
-
     public enum City
     {
         Atlanta,
@@ -13,10 +12,10 @@
         Duluth,
         ElPaso,
         Helena,
-        KansasCity,
         Houston,
-        LittleRock,
+        KansasCity,
         LasVegas,
+        LittleRock,
         LosAngeles,
         Miami,
         Montreal,

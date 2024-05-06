@@ -45,13 +45,13 @@ namespace TicketToRide.Services
             return new MakeMoveResponse
             {
                 IsValid = true,
-                Message = ValidMovesMessages.PlayerDrawTrainCard
+                Message = ValidMovesMessages.ValidMove
             };
         }
 
-        public MakeMoveResponse ValidateClaimRouteMove (ClaimRouteMove claimRouteMove)
+        public MakeMoveResponse ValidateClaimRouteMove(ClaimRouteMove claimRouteMove)
         {
-            if(claimRouteMove.Route.Color != Model.Enums.TrainColor.Grey
+            if (claimRouteMove.Route.Color != Model.Enums.TrainColor.Grey
                 && claimRouteMove.ColorUsed != claimRouteMove.Route.Color)
             {
                 return new MakeMoveResponse
@@ -81,12 +81,38 @@ namespace TicketToRide.Services
             return new MakeMoveResponse
             {
                 IsValid = true,
-                Message = ValidMovesMessages.Ok
+                Message = ValidMovesMessages.ValidMove
             };
         }
-        public void ValidateDrawDestinationCardMove()
-        {
 
+        public MakeMoveResponse ValidateDrawDestinationCardsMove(DrawDestinationCardMove drawDestinationCardsMove)
+        {
+            var canDrawCards = drawDestinationCardsMove.Game.Board.DestinationCards.Count >= 3;
+
+            if (canDrawCards)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = InvalidMovesMessages.NotEnoughDestinationCards
+                };
+            }
+
+            return new MakeMoveResponse
+            {
+                IsValid = true,
+                Message = ValidMovesMessages.ValidMove
+            };
+        }
+
+        public MakeMoveResponse ValidateChooseDestinationCardsMove(ChooseDestinationCardMove chooseDestinationCardMove)
+        {
+            return new MakeMoveResponse { IsValid = false };
+            //cheat: make move to try to post destination cards but others
+            //mark the 3 destination cards as waitingToBeChosen.
+            //check if the cards received are the ones waiting to be chosen
+            //if yes, allow the move; at the end if any of the cards are returned to the deck,
+            //unmark them
         }
     }
 }

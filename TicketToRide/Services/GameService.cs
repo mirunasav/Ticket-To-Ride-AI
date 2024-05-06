@@ -117,6 +117,83 @@ namespace TicketToRide.Services
             return response;
         }
 
+        public MakeMoveResponse DrawDestinationCards(int playerIndex)
+        {
+            var drawDestinationCardMove = new DrawDestinationCardMove(game, playerIndex);
+
+            var canMakeMoveMessage = CanMakeMove(drawDestinationCardMove);
+
+            if (canMakeMoveMessage != ValidMovesMessages.Ok)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = canMakeMoveMessage
+                };
+            }
+
+            //does this move need extra validation? => if there are 3 remaining dest cards
+            //if round is not final? see rules
+
+            var validateMove = moveValidatorService.ValidateDrawDestinationCardsMove(drawDestinationCardMove);
+            if (!validateMove.IsValid)
+            {
+                return validateMove;
+            }
+
+            var response = drawDestinationCardMove.Execute();
+            return response;
+        }
+
+        public MakeMoveResponse ChooseDestinationCards(DrawDestinationCardsRequest drawDestinationCardsRequest)
+        {
+            var chooseDestinationCardMove = new ChooseDestinationCardMove(
+                game,
+                drawDestinationCardsRequest.PlayerIndex,
+                drawDestinationCardsRequest.DestinationCards);
+
+            var canMakeMoveMessage = CanMakeMove(chooseDestinationCardMove);
+
+            if (canMakeMoveMessage != ValidMovesMessages.Ok)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = canMakeMoveMessage
+                };
+            }
+
+            var validateMove = moveValidatorService.ValidateChooseDestinationCardsMove(chooseDestinationCardMove);
+            if (!validateMove.IsValid)
+            {
+                return validateMove;
+            }
+
+            var response = chooseDestinationCardMove.Execute();
+            return response;
+        }
+
+        #region frontend
+        public MakeMoveResponse CanRouteBeClaimed(string origin, string destination)
+        {
+            bool originExists = Enum.TryParse(origin, out City originCity);
+            bool destinationExists = Enum.TryParse(destination, out City destinationCity);
+
+            if (!originExists || !destinationExists)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = InvalidMovesMessages.RouteDoesNotExist
+                };
+            }
+
+            var canClaimRouteMove = new CanClaimRouteMove(game, 0, originCity, destinationCity);
+
+            var validateMove = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove);
+            return validateMove;
+        }
+        #endregion
         private bool IsPlayerIndexValid(int playerIndex)
         {
             return !(game.Players.Count < playerIndex || playerIndex < 0);
@@ -158,10 +235,19 @@ namespace TicketToRide.Services
                 }
             }
 
-            if (move is ClaimRouteMove)
+            if (move is ClaimRouteMove || move is DrawDestinationCardMove)
             {
                 if (game.GameState != GameState.WaitingForPlayerMove &&
                     game.GameState != GameState.DecidingAction)
+                {
+                    return InvalidMovesMessages.InvalidActionForCurrentGameState;
+                }
+            }
+
+            if (move is ChooseDestinationCardMove)
+            {
+                if (game.GameState != GameState.WaitingForPlayerMove &&
+                  game.GameState != GameState.ChoosingDestinationCards)
                 {
                     return InvalidMovesMessages.InvalidActionForCurrentGameState;
                 }

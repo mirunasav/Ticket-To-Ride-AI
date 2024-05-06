@@ -31,6 +31,8 @@ namespace TicketToRide
             {
             }
 
+            app.UseStaticFiles();
+
             //app.UseSession();
             app.UseRouting();
             app.UseAuthorization();
@@ -43,6 +45,7 @@ namespace TicketToRide
                 endpoints.MapControllerRoute(
                      name: "default",
                   pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapFallbackToFile("/index.html");
             });
 #pragma warning restore ASP0014 // Suggest using top level route registrations
 

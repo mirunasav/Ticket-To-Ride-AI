@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
+using TicketToRide.Model.Enums;
 using TicketToRide.Services;
 
 namespace TicketToRide.Controllers
@@ -26,9 +27,12 @@ namespace TicketToRide.Controllers
             return Json(game);
         }
 
+        //get game si daca jocul nu exista, new game
+
         [HttpGet]
-        public IActionResult Index()
+        public IActionResult Index(int? playerIndex)
         {
+            //pasez player index si iau datele pt fiecare player, restul au hide data
             var game = gameService.GetGameInstance();
 
             if(game is null)
@@ -112,5 +116,63 @@ namespace TicketToRide.Controllers
                 return BadRequest();
             }
         }
+
+        [HttpGet]
+        public IActionResult DrawDestinationCards(int playerIndex)
+        {
+            var response = gameService.DrawDestinationCards(playerIndex);
+
+            if (!response.IsValid)
+            {
+                return BadRequest(response.Message);
+            }
+
+            if(response is DrawDestinationCardsResponse drawDestinationCardResponse)
+            {
+                return Json(new
+                {
+                    Message = drawDestinationCardResponse.Message,
+                    DrawnDestinationCards = drawDestinationCardResponse.DrawnDestinationCards
+                });
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPost]
+        public IActionResult DrawDestinationCards([FromBody] DrawDestinationCardsRequest request)
+        {
+
+            var response = gameService.ChooseDestinationCards(request);
+
+            if (!response.IsValid)
+            {
+                return BadRequest(response.Message);
+            }
+
+            if (response is DrawDestinationCardsResponse drawDestinationCardResponse)
+            {
+                return Json(new
+                {
+                    Message = drawDestinationCardResponse.Message,
+                    DrawnDestinationCards = drawDestinationCardResponse.DrawnDestinationCards
+                });
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
+        #region frontend
+        [HttpGet]
+        public IActionResult DoesRouteExist([FromQuery]string origin, string destination)
+        {
+            var result = gameService.CanRouteBeClaimed(origin, destination);
+            return Json(result);
+        }
+        #endregion
     }
 }

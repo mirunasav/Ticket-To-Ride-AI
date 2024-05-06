@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket to Ride Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <!-- Include any other CSS or JavaScript files here -->
+</head>
+
+<body>
+    <div id='player-index'>0</div>
+    <!-- Your HTML content goes here -->
+    <div id="messages-container"></div>
+    <div id=game-container>
+        <div id="board-and-deck-container">
+            <div id='board-container'></div>
+            <div id="train-card-deck-container"></div>
+        </div>
+        <div id = "player-train-cards-container"></div>
+    </div>
+    <div id = 'player-stats-container'></div>
+
+    <!-- This is where the p5.js canvas will be rendered -->
+    <!-- Include any other HTML content here -->
+    </div>
+
+    <script type="module" src="./js/board.js"></script>
+    <script type="module" src="./js/game.js"></script>
+    <script type="module" src="./js/trainCardsDeck.js"></script>
+    <script type="module" src="./js/gameObjects.js"></script>
+    <script type="module" src="./js/getObjectsFromEnum.js"></script>
+    <link rel="stylesheet" href="./css/canvas.css">
+</body>
+
+</html>

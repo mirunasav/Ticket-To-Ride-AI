@@ -9,6 +9,9 @@
         public const string PlayerCanClaimRoute = "The player can claim this route";
         public const string PlayerHasClaimedRoute = "The player has claimed this route";
 
+        public const string PlayerHasDrawnDestinationCards = "The player has drawn destination cards and has to keep at least one.";
+        public const string ValidMove = "Move is valid";
+
         public const string Ok = "OK";
     }
 }
