@@ -27,20 +27,39 @@ namespace TicketToRide.Controllers
             return Json(game);
         }
 
-        //get game si daca jocul nu exista, new game
-
         [HttpGet]
-        public IActionResult Index(int? playerIndex)
+        public IActionResult Index(int playerIndex = 0)
         {
             //pasez player index si iau datele pt fiecare player, restul au hide data
-            var game = gameService.GetGameInstance();
+            var game = gameService.GetGameInstance(playerIndex);
 
             if(game is null)
             {
                 return NotFound("Game is null");
             }
 
-            return Json(gameService.GetGameInstance());
+            return Json(game);
+        }
+
+        [HttpDelete]
+        public IActionResult Index()
+        {
+            gameService.DeleteGame();
+
+            return Ok();
+        }
+
+        [HttpGet]
+        public IActionResult IsGameInitialized()
+        {
+            var game = gameService.GetGameInstance();
+
+            if (game is null)
+            {
+                return Json(false);
+            }
+
+            return Json(true);
         }
 
         [HttpGet]
