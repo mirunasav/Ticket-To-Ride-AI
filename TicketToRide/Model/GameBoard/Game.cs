@@ -19,6 +19,14 @@ namespace TicketToRide.Model.GameBoard
             this.Players = players;
         }
 
+        public Game(Board board, IList<Player> players, GameState gameState)
+        {
+            Board = board;
+            Players = players;
+            GameState = gameState;
+        }
+
+
         public ValidateActionMessage ValidateAction(PlayerActions action, int playerIndex)
         {
             if(playerIndex != PlayerTurn)

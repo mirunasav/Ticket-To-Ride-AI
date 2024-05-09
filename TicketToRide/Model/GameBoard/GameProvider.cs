@@ -12,13 +12,18 @@ namespace TicketToRide.Model.GameBoard
             var players = InitPlayers(numberOfPlayers);
             var board = new Board();
             DealCards(board, players);
-            game =  new Game(board, players);
+            game = new Game(board, players);
             return game;
         }
 
         public Game GetGame()
         {
             return game;
+        }
+
+        public void DeleteGame()
+        {
+            game = null;
         }
 
         #region private

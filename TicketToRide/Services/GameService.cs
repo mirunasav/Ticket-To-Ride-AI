@@ -30,9 +30,16 @@ namespace TicketToRide.Services
             return game;
         }
 
-        public Game GetGameInstance()
+        public Game GetGameInstance(int playerIndex)
         {
-            return gameProvider.GetGame();
+            var game = gameProvider.GetGame();
+            //hide statistics
+
+        }
+
+        public void DeleteGame()
+        {
+            gameProvider.DeleteGame();
         }
 
         public IList<Player> GetPlayers()
@@ -254,6 +261,11 @@ namespace TicketToRide.Services
             }
 
             return ValidMovesMessages.Ok;
+        }
+
+        private Game GetPlayerPOV(int playerIndex, Game game)
+        {
+            var player = game.Players[playerIndex];
         }
 
     }
