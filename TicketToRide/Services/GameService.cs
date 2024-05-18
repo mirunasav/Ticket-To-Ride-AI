@@ -6,6 +6,7 @@ using TicketToRide.Model.GameBoard;
 using TicketToRide.Model.Players;
 using TicketToRide.Moves;
 
+
 namespace TicketToRide.Services
 {
     public class GameService
@@ -33,8 +34,19 @@ namespace TicketToRide.Services
         public Game GetGameInstance(int playerIndex)
         {
             var game = gameProvider.GetGame();
-            //hide statistics
 
+            //check if playerIndex is out of bounds
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(playerIndex, game.Players.Count);
+
+            //hide statistics
+            var hiddenStatisticsGame = GetPlayerPOV(playerIndex, game);
+
+            return hiddenStatisticsGame;
+        }
+
+        public Game GetGameInstance()
+        {
+          return gameProvider.GetGame();
         }
 
         public void DeleteGame()
@@ -98,9 +110,9 @@ namespace TicketToRide.Services
             return response;
         }
 
-        public MakeMoveResponse ClaimRoute(ClaimRouteRequest request)
+        public MakeMoveResponse ClaimRoute(int playerIndex, City origin, City destination, TrainColor colorUsed)
         {
-            var claimRouteMove = new ClaimRouteMove(game, request.PlayerIndex, request.ColorUsed, request.Route);
+            var claimRouteMove = new ClaimRouteMove(game, playerIndex, colorUsed, origin, destination);
 
             var canMakeMoveMessage = CanMakeMove(claimRouteMove);
 
@@ -265,7 +277,24 @@ namespace TicketToRide.Services
 
         private Game GetPlayerPOV(int playerIndex, Game game)
         {
-            var player = game.Players[playerIndex];
+            var players = new List<Player>();
+            //foreach player that is not our player, get hidden statistics:
+            //name, points, remainingTrains, playerColor, number of Destinationcards, number of cards in hand 
+            for(int i = 0; i < game.Players.Count; i++)
+            {
+                if(i == playerIndex)
+                {
+                    players.Add(game.Players[i]);
+                }
+                else
+                {
+                    players.Add(game.Players[i].GetHiddenStatisticsPlayer());
+                }
+            }
+
+            var newGame = new Game(game.Board, players, game.GameState, game.PlayerTurn);
+
+            return newGame;
         }
 
     }

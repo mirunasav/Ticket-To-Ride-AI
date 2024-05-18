@@ -1,15 +1,16 @@
 import { PlayerColor, TrainColor } from "./GameObjects.js";
 import { cities } from "./game.js";
+import { GameState } from "./gameStates.js";
 
 export function getPlayerColorFromNumber(colorNumber) {
     switch (colorNumber) {
-        case 1:
+        case 0:
             return PlayerColor.Red;
-        case 2:
+        case 1:
             return PlayerColor.Blue;
-        case 3:
+        case 2:
             return PlayerColor.Yellow;
-        case 4:
+        case 3:
             return PlayerColor.Green;
         default:
             return null;
@@ -43,4 +44,19 @@ export function getTrainColorFromNumber(colorNumber) {
 
 export function getCityFromNumber(cityNumber){
     return cities[cityNumber];
+}
+
+export function getGameStateFromNumber(gameStateNumber){
+    switch (gameStateNumber) {
+        case 0:
+            return GameState.WaitingForPlayerMove;
+        case 1:
+            return GameState.DrawingTrainCards;
+        case 2:
+            return GameState.DecidingAction;
+        case 3:
+            return GameState.ChoosingDestinationCards;
+        default:
+            return null;
+    }
 }

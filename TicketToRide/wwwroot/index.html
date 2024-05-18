@@ -12,39 +12,55 @@
 
 <body>
     <!-- Your HTML content goes here -->
-    <div id="messages-container"></div>
-    <div id="main-game-container">
-        <div id=game-container>
+    <div id="main-container">
+        <div id="messages-container">
+            <div id="messages-container__player-turn-message">
+                <span>Choose action: draw 2 train cards, claim a route or </span>
+                <button id="drawDestinationCardsButton"> Draw destination cards </button>
+            </div>
+            <div id="messages-container__waiting-message">
+                <span>Waiting for opponent move...</span>
+            </div>
+            <div id="messages-container__error-message" style="display: none;">
+                <span></span>
+            </div>
+            <div id="messages-container__information-message" style="display: none;">
+                <span></span>
+            </div>
+        </div>
+        <div id="main-game-container">
+            <div id=game-container>
 
-            <div id="board-and-deck-container">
-                <div id="player-destination-cards-container">
-                    <h2>Destinations</h2>
-                    <p class='destination-cards-title'>Pending</p>
-                    <div id="pending-destinations-container"></div>
+                <div id="board-and-deck-container">
+                    <div id="player-destination-cards-container">
+                        <h2>Destinations</h2>
+                        <p class='destination-cards-title'>Pending</p>
+                        <div id="pending-destinations-container"></div>
 
-                    <p class='destination-cards-title'>Completed</p>
-                    <div id="completed-destinations-container"></div>
+                        <p class='destination-cards-title'>Completed</p>
+                        <div id="completed-destinations-container"></div>
+                    </div>
+                    <div id='board-container'></div>
+                    <div id="train-card-deck-container"></div>
                 </div>
-                <div id='board-container'></div>
-                <div id="train-card-deck-container"></div>
+                <div id=player-cards-container>
+                    <div id="player-train-cards-container"></div>
+                </div>
             </div>
-            <div id=player-cards-container>
-                <div id="player-train-cards-container"></div>
+            <div id="player-stats-create-game-container">
+                <div id='all-player-stats-container'></div>
+                <div id="init-game-button-container">
+                    <label for="numberOfPlayers">Number of Players:</label>
+                    <input type="number" id="numberOfPlayers" name="numberOfPlayers" min="2" max="4">
+                    <button id="createGameButton">Create Game</button>
+                </div>
+                <button id="newGameButton"> New Game</button>
             </div>
-        </div>
-        <div id="player-stats-create-game-container">
-            <div id='all-player-stats-container'></div>
-            <div id="init-game-button-container">
-                <label for="numberOfPlayers">Number of Players:</label>
-                <input type="number" id="numberOfPlayers" name="numberOfPlayers" min="2" max="4">
-                <button id="createGameButton">Create Game</button>
-            </div>
-            <button id = "newGameButton"> New Game</button>
-        </div>
 
+        </div>
+        <!-- This is where the p5.js canvas will be rendered -->
+        <!-- Include any other HTML content here -->
     </div>
-    <!-- This is where the p5.js canvas will be rendered -->
-    <!-- Include any other HTML content here -->
     </div>
 
     <script type="module" src="./js/board.js"></script>

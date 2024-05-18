@@ -25,7 +25,7 @@ export function initializeCities(){
     let KansasCity = new City(426, 257, 'KansasCity')
     let OklahomaCity = new City(411, 319, 'OklahomaCity')
     let Dallas = new City(426, 383, 'Dallas')
-    let ElPaso = new City(290, 400, 'ElPase')
+    let ElPaso = new City(290, 400, 'ElPaso')
     let Phoenix = new City(201, 373, 'Phoenix')
     let Houston = new City(457, 412, 'Houston')
     let LittleRock = new City(478, 322, 'LittleRock')

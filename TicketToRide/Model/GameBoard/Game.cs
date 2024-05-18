@@ -19,11 +19,12 @@ namespace TicketToRide.Model.GameBoard
             this.Players = players;
         }
 
-        public Game(Board board, IList<Player> players, GameState gameState)
+        public Game(Board board, IList<Player> players, GameState gameState, int playerTurn)
         {
             Board = board;
             Players = players;
             GameState = gameState;
+            PlayerTurn = playerTurn;
         }
 
 
@@ -78,7 +79,6 @@ namespace TicketToRide.Model.GameBoard
 
             foundRoute.IsClaimed = true;
             foundRoute.ClaimedBy = player.Color;
-
         }
 
         #region private

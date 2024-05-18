@@ -6,3 +6,4 @@ export const GameState = {
     DecidingAction : 'DecidingAction',
     ChoosingDestinationCards : 'ChoosingDestinationCards'
 }
+

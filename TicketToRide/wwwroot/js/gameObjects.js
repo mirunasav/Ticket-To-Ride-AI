@@ -34,7 +34,7 @@ export class Route{
         this.color = getTrainColorFromNumber(color);
         this.length = length;
         this.isClaimed = isClaimed;
-        this.claimedBy = this.claimedBy;
+        this.claimedBy = getPlayerColorFromNumber(claimedBy);
         this.pointValue = this.pointValue;
     }
 }
@@ -58,7 +58,7 @@ export const PlayerColor = {
 }
 
 
-function initPlayerHand(hand){
+export function initPlayerHand(hand){
     let playerHand = [];
     for(const card of hand){
         playerHand.push(new TrainCard(card.color,true))

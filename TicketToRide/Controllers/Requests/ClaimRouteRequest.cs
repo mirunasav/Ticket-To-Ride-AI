@@ -6,9 +6,11 @@ namespace TicketToRide.Controllers.Requests
     {
         public int PlayerIndex { get; set; }
 
-        public TrainColor ColorUsed { get; set; }
+        public string ColorUsed { get; set; }
 
         //sau direct route?
-        public Model.GameBoard.Route Route { get; set; }
+        public string OriginCity { get; set; }
+
+        public string DestinationCity { get; set; }
     }
 }

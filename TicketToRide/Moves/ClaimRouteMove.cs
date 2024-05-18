@@ -11,11 +11,15 @@ namespace TicketToRide.Moves
 
         public TrainColor ColorUsed {  get; set; }
 
-        public ClaimRouteMove(Game game, int playerIndex, TrainColor colorUsed, Model.GameBoard.Route route)
+        public City Origin {  get; set; }
+
+        public City Destination { get; set; }
+        public ClaimRouteMove(Game game, int playerIndex, TrainColor colorUsed, City origin, City destination)
             : base(game, playerIndex)
         {
-            this.Route = route;
             this.ColorUsed = colorUsed;
+            this.Origin = origin;
+            this.Destination = destination;
         }
 
         public override MakeMoveResponse Execute()

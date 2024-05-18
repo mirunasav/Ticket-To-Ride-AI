@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Routing;
-using System.Numerics;
-using TicketToRide.Model.Cards;
+﻿using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
 
@@ -20,6 +18,12 @@ namespace TicketToRide.Model.Players
         public List<DestinationCard> CompletedDestinationCards { get; set; } = new List<DestinationCard>();
 
         public List<TrainCard> Hand { get; set; } = new List<TrainCard>();
+
+        public int NumberOfTrainCards { get; set; }
+
+        public int NumberOfPendingDestinationCards { get; set; }
+
+        public int NumberOfCompletedDestinationCards { get; set;}
 
         //private Dictionary<PlayerActions, Action> ActionMap { get; set; }
 
@@ -115,6 +119,21 @@ namespace TicketToRide.Model.Players
 
             return true;
         }
+
+        public Player GetHiddenStatisticsPlayer()
+        {
+            var hiddentStatsPlayer = new Player(Name, Color)
+            {
+                Points = Points,
+                RemainingTrains = RemainingTrains,
+                NumberOfTrainCards = Hand.Count,
+                NumberOfPendingDestinationCards = PendingDestinationCards.Count,
+                NumberOfCompletedDestinationCards = CompletedDestinationCards.Count
+            };
+
+            return hiddentStatsPlayer;
+        }
+
         private void DrawTrainCard(Board board)
         {
             var cards = board.Deck.Pop(2);

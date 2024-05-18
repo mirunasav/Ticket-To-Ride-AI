@@ -1,5 +1,7 @@
-﻿using TicketToRide.Controllers.Responses;
+﻿using System;
+using TicketToRide.Controllers.Responses;
 using TicketToRide.Model.Constants;
+using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
 using TicketToRide.Moves;
 
@@ -51,6 +53,17 @@ namespace TicketToRide.Services
 
         public MakeMoveResponse ValidateClaimRouteMove(ClaimRouteMove claimRouteMove)
         {
+            claimRouteMove.Route = routeService.GetRoute(claimRouteMove.Origin, claimRouteMove.Destination);
+
+            if (claimRouteMove.Route is null)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = InvalidMovesMessages.RouteDoesNotExist
+                };
+            }
+
             if (claimRouteMove.Route.Color != Model.Enums.TrainColor.Grey
                 && claimRouteMove.ColorUsed != claimRouteMove.Route.Color)
             {
@@ -78,11 +91,24 @@ namespace TicketToRide.Services
                 };
             }
 
-            return new MakeMoveResponse
+            var isClaimed = canClaimRouteMove.Route.IsClaimed;
+
+            if (isClaimed)
             {
-                IsValid = true,
-                Message = ValidMovesMessages.ValidMove
-            };
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = InvalidMovesMessages.RouteAlreadyClaimed
+                };
+            }
+            else
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = true,
+                    Message = ValidMovesMessages.ValidMove
+                };
+            }
         }
 
         public MakeMoveResponse ValidateDrawDestinationCardsMove(DrawDestinationCardMove drawDestinationCardsMove)

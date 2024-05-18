@@ -12,8 +12,37 @@ body {
     display: none;
 }
 
+#main-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 #messages-container{
     height: 10vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#messages-container__player-turn-message{
+    text-align: center;
+}
+
+#messages-container__error-message{
+    text-align: center;
+    color:red;
+    font-weight: bold;
+}
+
+#messages-container__information-message{
+    text-align: center;
+    color:green;
+    font-weight: bold;
+}
+
+#drawDestinationCardsButton{
+    margin-left: 10px;
 }
 
 #game-container{
@@ -99,6 +128,17 @@ canvas{
     transform: translateY(2px);
 }
 
+.face-up-deck-image__unavailable{
+    filter: brightness(80%); 
+    cursor:not-allowed !important;
+}
+
+.face-up-deck-image__unavailable:hover{
+    filter: brightness(80%) !important; 
+    cursor:not-allowed !important;
+}
+
+
 #all-player-stats-container{
     width: 50vw;
 }
@@ -132,6 +172,7 @@ canvas{
 #player-stats-create-game-container{
     display: flex;
     width:20vw;
+    padding-inline: 10px;
 }
 
 #newGameButton{

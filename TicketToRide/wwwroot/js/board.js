@@ -1,22 +1,12 @@
 import { PlayerColor, TrainColor } from "./GameObjects.js";
-import { City, initializeCities } from "./city.js";
-import { cities } from "./game.js";
+import { cities, claimedRoutes, playerIndex, showMessage } from "./game.js";
 import { getPlayerColorFromNumber } from "./getObjectsFromEnum.js";
+import { buildColorsWithWhichRouteCanBeClaimedMessage } from "./trainCardsDeck.js";
 
 let boardImg; // Variable to store the board image
 let canvasWidth, canvasHeight; // Variables to store canvas dimensions
 let boardCanvas;
-let selectedCities = []
-let claimedRoutes = []
-let claimedRoute = {
-    origin: 2,
-    destination: 35,
-    color: TrainColor.White,
-    length: 6,
-    isClaimed: true,
-    claimedBy: 1
-}
-claimedRoutes.push(claimedRoute)
+export let selectedCities = [];
 
 export function preloadBoard() {
     // Load the board image
@@ -51,7 +41,7 @@ export function drawBoard() {
         drawCityCircle(city, selectedCities.includes(city));
     }
     for (const route of claimedRoutes) {
-        drawClaimedRoute(route);
+       // drawClaimedRoute(route);
     }
 
 }
@@ -94,11 +84,8 @@ function drawCityCircle(city, isSelected = false) {
 }
 
 function drawClaimedRoute(route) {
-    let originCity = cities[route.origin]
-    let destinationCity = cities[route.destination]
-
-    let point1 = createVector(originCity.x, originCity.y);
-    let point2 = createVector(destinationCity.x, destinationCity.y);
+    let point1 = createVector(route.origin.x, route.destination.y);
+    let point2 = createVector(route.origin.x, route.destination.y);
 
     changeStroke(route.claimedBy)
 
@@ -155,12 +142,44 @@ async function checkIfRouteExists(selectedCities) {
             'Content-Type': 'application/json'
         },
     });
+
     if (response.ok) {
         let responseJson = await response.json();
-        console.log(responseJson)
+        console.log(responseJson);
+
+        if (responseJson.isValid) {
+            await tryToClaimRoute(origin, destination);
+        }
+        else {
+            showMessage(responseJson.message);
+        }
     }
     else {
         console.error(response)
+        showMessage(errorResponse);
+    }
+}
+
+async function tryToClaimRoute(origin, destination) {
+    let url = `http://localhost:5001/game/CanClaimRoute?playerIndex=${playerIndex}&origin=${origin}&&destination=${destination}`;
+
+    var response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+
+    if (response.ok) {
+        let responseJson = await response.json();
+        console.log(responseJson);
+        let message = buildColorsWithWhichRouteCanBeClaimedMessage(responseJson.trainColors);
+        showMessage(message, false, false);
+    }
+    else {
+        let errorText = await response.text();
+        showMessage(errorText)
+        console.error(errorText)
     }
 }
 
@@ -186,6 +205,7 @@ function changeStroke(playerColor) {
     }
 
 }
+
 function resetStroke() {
     strokeWeight(1);
     stroke(0, 0, 0);

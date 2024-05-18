@@ -1,11 +1,12 @@
 import { getCityFromNumber } from "./getObjectsFromEnum.js";
+import { emptyHtmlContainer } from "./utils.js";
 
 export function displayPlayerDestinationCards(player){
     let pendingDestinationCards = player.pendingDestinationCards;
     let completedDestinationCards = player.completedDestinationCards;
     
-    const pendingContainer = document.getElementById('pending-destinations-container');
-    const completedContainer = document.getElementById('completed-destinations-container');
+    let pendingContainer = emptyHtmlContainer('pending-destinations-container');
+    let completedContainer = emptyHtmlContainer('completed-destinations-container');
 
     for(const card of pendingDestinationCards){
         const cardDiv = createDestinationCardElement(card);
