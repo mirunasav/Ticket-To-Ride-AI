@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket to Ride Game</title>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Include any other CSS or JavaScript files here -->
@@ -21,6 +22,11 @@
             <div id="messages-container__waiting-message">
                 <span>Waiting for opponent move...</span>
             </div>
+            <div id="choose-destination-cards-container" style="display:none">
+                <div id="possible-destinations-list">
+                </div>
+                <button id="chooseDestinationsButton" disabled> Choose Destinations </button>
+            </div>
             <div id="messages-container__error-message" style="display: none;">
                 <span></span>
             </div>
@@ -34,10 +40,10 @@
                 <div id="board-and-deck-container">
                     <div id="player-destination-cards-container">
                         <h2>Destinations</h2>
-                        <p class='destination-cards-title'>Pending</p>
+                        <p class='destination-cards-title' id="pending-destination-cards-title">Pending</p>
                         <div id="pending-destinations-container"></div>
 
-                        <p class='destination-cards-title'>Completed</p>
+                        <p class='destination-cards-title' id="completed-destination-cards-title">Completed</p>
                         <div id="completed-destinations-container"></div>
                     </div>
                     <div id='board-container'></div>

@@ -16,7 +16,10 @@ export class DestinationCard {
 }
 
 export class Player {
-    constructor(name, points, remainingTrains, color, pendingDestinationCards, hand, completedDestinationCards) {
+    constructor(name, points, remainingTrains, color, pendingDestinationCards, hand, completedDestinationCards,
+        numberOfTrainCards, numberOfPendingDestinationCards, numberOfCompletedDestinationCards,
+        claimedRoutes
+    ) {
         this.name = name;
         this.points = points;
         this.remainingTrains = remainingTrains;
@@ -24,6 +27,10 @@ export class Player {
         this.pendingDestinationCards = initPlayerDestinationCards(pendingDestinationCards);
         this.completedDestinationCards = initPlayerDestinationCards(completedDestinationCards);
         this.hand = initPlayerHand(hand);
+        this.numberOfTrainCards = numberOfTrainCards;
+        this.numberOfPendingDestinationCards = numberOfPendingDestinationCards;
+        this.numberOfCompletedDestinationCards = numberOfCompletedDestinationCards;
+        this.claimedRoutes = new ClaimedRoutes(claimedRoutes.cities, claimedRoutes.edges);
     }
 }
 
@@ -38,6 +45,19 @@ export class Route{
         this.pointValue = this.pointValue;
     }
 }
+
+export class ClaimedRoutes{
+    constructor(cities, edges){
+        let cityVertices = [];
+        for( const city of cities){
+            cityVertices.push(getCityFromNumber(city));
+        }
+        this.cities = cityVertices;
+
+        this.edges = edges;
+    }
+}
+
 export const TrainColor = {
     Red: 'Red',
     Orange: 'Orange',
@@ -74,4 +94,8 @@ function initPlayerDestinationCards(destinationCards){
         playerDestinationCards.push(new DestinationCard(card.origin, card.destination, card.pointValue))
     }
     return playerDestinationCards;
+}
+
+function initClaimedRoutes(claimedRoutes){
+
 }

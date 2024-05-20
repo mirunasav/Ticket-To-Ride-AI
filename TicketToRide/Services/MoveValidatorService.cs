@@ -64,8 +64,11 @@ namespace TicketToRide.Services
                 };
             }
 
-            if (claimRouteMove.Route.Color != Model.Enums.TrainColor.Grey
-                && claimRouteMove.ColorUsed != claimRouteMove.Route.Color)
+            var possibleColors = claimRouteMove.Route.Select(r => r.Color).ToList();
+
+            if (!possibleColors.Contains(Model.Enums.TrainColor.Grey)
+                && !possibleColors.Contains(claimRouteMove.ColorUsed)
+                && claimRouteMove.ColorUsed != TrainColor.Locomotive)
             {
                 return new MakeMoveResponse
                 {
@@ -74,15 +77,17 @@ namespace TicketToRide.Services
                 };
             }
 
-            return routeService.CanPlayerClaimRoute(claimRouteMove);
+            var numberOfPlayers = gameProvider.GetNumberOfPlayers();
+
+            return routeService.CanPlayerClaimRoute(claimRouteMove, numberOfPlayers);
         }
 
         public MakeMoveResponse CanRouteBeClaimed(CanClaimRouteMove canClaimRouteMove)
         {
-            //check that the route exists
+            //check that the route exists and is not occupied
             canClaimRouteMove.Route = routeService.GetRoute(canClaimRouteMove.Origin, canClaimRouteMove.Destination);
 
-            if (canClaimRouteMove.Route is null)
+            if (canClaimRouteMove.Route is null || canClaimRouteMove.Route.Count == 0)
             {
                 return new MakeMoveResponse
                 {
@@ -91,7 +96,9 @@ namespace TicketToRide.Services
                 };
             }
 
-            var isClaimed = canClaimRouteMove.Route.IsClaimed;
+            var numberOfPlayers = gameProvider.GetNumberOfPlayers();
+
+            var isClaimed = routeService.IsRouteClaimed(canClaimRouteMove.Route, numberOfPlayers);
 
             if (isClaimed)
             {
@@ -115,7 +122,7 @@ namespace TicketToRide.Services
         {
             var canDrawCards = drawDestinationCardsMove.Game.Board.DestinationCards.Count >= 3;
 
-            if (canDrawCards)
+            if (!canDrawCards)
             {
                 return new MakeMoveResponse
                 {
@@ -133,12 +140,22 @@ namespace TicketToRide.Services
 
         public MakeMoveResponse ValidateChooseDestinationCardsMove(ChooseDestinationCardMove chooseDestinationCardMove)
         {
-            return new MakeMoveResponse { IsValid = false };
-            //cheat: make move to try to post destination cards but others
-            //mark the 3 destination cards as waitingToBeChosen.
-            //check if the cards received are the ones waiting to be chosen
-            //if yes, allow the move; at the end if any of the cards are returned to the deck,
-            //unmark them
+            var cards = chooseDestinationCardMove.ChosenDestinationCards
+                .Concat(chooseDestinationCardMove.NotChosenDestinationCards).ToList();
+
+            foreach (var card in cards)
+            {
+                if (!card.IsWaitingToBeChosen)
+                {
+                    return new MakeMoveResponse
+                    {
+                        IsValid = false,
+                        Message = InvalidMovesMessages.DestinationIsNotAnOption
+                    };
+                }
+            }
+
+            return new MakeMoveResponse { IsValid = true };
         }
     }
 }

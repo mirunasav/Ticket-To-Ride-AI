@@ -6,6 +6,6 @@ namespace TicketToRide.Controllers.Responses
     {
         public IList<TrainColor> TrainColorsWhichCanBeUsed { get; set; } = new List<TrainColor>();
 
-        public Model.GameBoard.Route Route { get; set; }
+        public IList<Model.GameBoard.Route> Route { get; set; }
     }
 }

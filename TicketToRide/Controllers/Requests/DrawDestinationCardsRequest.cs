@@ -6,7 +6,7 @@ namespace TicketToRide.Controllers.Requests
     {
         public int PlayerIndex { get; set; }
 
-        public IList<DestinationCard> DestinationCards { get; set; }
+        public IList<ChosenDestinationCard> DestinationCards { get; set; }
 
     }
 }

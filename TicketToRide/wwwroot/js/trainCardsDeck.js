@@ -146,10 +146,7 @@ async function drawTrainCard(faceUpCardIndex = -1) {
     if (response.ok) {
         let responseJson = await response.json();
         console.log(responseJson);
-        //only reload face up deck if a card is drawn from it
-        if (faceUpCardIndex !== -1) {
-            reloadFaceUpDeck(responseJson.faceUpDeck);
-        }
+        reloadFaceUpDeck(responseJson.faceUpDeck);
         reloadPlayerTrainCards(responseJson.playerHand, playerIndex);
     }
     else {

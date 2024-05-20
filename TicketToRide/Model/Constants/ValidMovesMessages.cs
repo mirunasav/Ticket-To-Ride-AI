@@ -10,6 +10,8 @@
         public const string PlayerHasClaimedRoute = "The player has claimed this route";
 
         public const string PlayerHasDrawnDestinationCards = "The player has drawn destination cards and has to keep at least one.";
+        public const string PlayerHasChosenDestinationCards = "The player has chosen which destination cards to keep.";
+       
         public const string ValidMove = "Move is valid";
 
         public const string Ok = "OK";

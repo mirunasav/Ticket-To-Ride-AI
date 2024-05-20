@@ -46,9 +46,9 @@ namespace TicketToRide.Moves
 
             var newGameState = UpdateGameState(isTurnFinished: isTurnFinishedByLocomotiveDraw);
 
-            //if the player still has to draw cards, and has drawn a card from the face up cards,
+            //if the player still has to draw cards
             //make the locomotives unavailable
-            if(newGameState == GameState.DrawingTrainCards && faceUpCardIndex != -1)
+            if(newGameState == GameState.DrawingTrainCards)
             {
                 Game.Board.ChangeFaceUpLocomotiveStatus(isAvailable: false);
             }

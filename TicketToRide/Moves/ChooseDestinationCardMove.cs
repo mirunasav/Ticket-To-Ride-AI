@@ -1,30 +1,48 @@
 ﻿using TicketToRide.Controllers.Responses;
 using TicketToRide.Model.Cards;
+using TicketToRide.Model.Constants;
 using TicketToRide.Model.GameBoard;
 
 namespace TicketToRide.Moves
 {
     public class ChooseDestinationCardMove : Move
     {
-        public IList<DestinationCard> DestinationCards { get; set; }
+        public List<DestinationCard> ChosenDestinationCards { get; set; }
+        public List<DestinationCard> NotChosenDestinationCards { get; set; }
 
-        public ChooseDestinationCardMove(Game game, int playerIndex, IList<DestinationCard> destinationCards)
+        public ChooseDestinationCardMove(
+            Game game,
+            int playerIndex,
+            List<DestinationCard> chosenDestinationCards,
+            List<DestinationCard> notChosenDestinationCards)
             : base(game, playerIndex)
         {
-            DestinationCards = destinationCards;
+            ChosenDestinationCards = chosenDestinationCards;
+            NotChosenDestinationCards = notChosenDestinationCards;
         }
+
         public override MakeMoveResponse Execute()
         {
+            //get the ones marked as waiting to be chosen 
             //update game state
+            foreach(var chosenCard in ChosenDestinationCards)
+            {
+                Game.GetPlayer(playerIndex).PendingDestinationCards.Add(chosenCard);
+                Game.Board.DestinationCards.Remove(chosenCard);
+            }
+
+            foreach (var notChosen in NotChosenDestinationCards)
+            {
+                notChosen.IsWaitingToBeChosen = false;
+            }
+
             Game.UpdateStateNextPlayerTurn();
 
             return new MakeMoveResponse
             {
-
+                IsValid = true,
+                Message = ValidMovesMessages.PlayerHasChosenDestinationCards
             };
-            //return the refused card : check if the card exists in the player's hand
-            //put them in a list: waiting to be reviwed dest cards? or mark them in some way with a flag?
-
         }
     }
 }

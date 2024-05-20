@@ -1,10 +1,10 @@
 import { DestinationCard, TrainCard, Player, Route } from "./GameObjects.js";
 import { drawBoard, preloadBoard, setupBoard } from "./board.js";
 import { initializeCities } from "./city.js";
-import { displayPlayerDestinationCards } from "./destinationCards.js";
+import { displayPlayerDestinationCards, emptyHoveredCityNames, hoveredCityNames } from "./destinationCards.js";
 import { GameState } from "./gameStates.js";
 import { getGameStateRequest } from "./getGameStateRequest.js";
-import { getGameStateFromNumber } from "./getObjectsFromEnum.js";
+import { getCityFromNumber, getCityIndexFromName, getGameStateFromNumber } from "./getObjectsFromEnum.js";
 import { initDisplayPlayerStatistics } from "./playerStatistics.js";
 import { chooseTrainCardColor, displayFaceUpDeckImages, displayPlayerTrainCards, preloadTrainCardImages } from "./trainCardsDeck.js";
 
@@ -30,6 +30,7 @@ const createGameButton = document.getElementById("createGameButton");
 const createGameButtonContainer = document.getElementById('init-game-button-container');
 const newGameButton = document.getElementById('newGameButton');
 const drawDestinationCardsButton = document.getElementById('drawDestinationCardsButton');
+const chooseDestinationsButton = document.getElementById('chooseDestinationsButton');
 
 addButtonEventListeners();
 preInitGame();
@@ -72,8 +73,23 @@ async function addButtonEventListeners() {
     });
 
     drawDestinationCardsButton.addEventListener("click", async function () {
-        //make request to draw 2 cards, etc
+        await drawDestinationCardsRequest();
     });
+
+    chooseDestinationsButton.addEventListener("click", async function () {
+        const destinations = [];
+
+        document.querySelectorAll('#possible-destinations-list div').forEach(div => {
+            const checkbox = div.querySelector('input[type="checkbox"]');
+            const [originCity, destinationCity] = checkbox.value.split('-');
+            destinations.push({
+                origin: originCity,
+                destination: destinationCity,
+                isChosen: checkbox.checked
+            });
+        });
+        await chooseDestinationsRequest(destinations);
+    })
 }
 
 function changeVisibilities(loadingNewGame) {
@@ -101,6 +117,8 @@ async function displayGame(exists = true, numberOfPlayers = 2) {
 
     if (response.ok) {
         let responseJson = await response.json();
+        console.log(`response`);
+        console.log(responseJson)
         initGameVariables(responseJson);
         initFaceUpDeck(faceUpDeck);
         initPlayerCardDeck(playerIndex)
@@ -146,7 +164,12 @@ function initGameVariables(game) {
             player.color,
             player.pendingDestinationCards,
             player.hand,
-            player.completedDestinationCards))
+            player.completedDestinationCards,
+            player.numberOfTrainCards,
+            player.numberOfPendingDestinationCards,
+            player.numberOfCompletedDestinationCards,
+            player.claimedRoutes
+        ));
     }
 
     for (const route of game.board.routes.routes) {
@@ -204,8 +227,10 @@ export function initMessagesContainer(playerTurn, playerIndex) {
         playerWaitingContainer.style.display = 'inline';
     }
     else {
-        playerTurnContainer.style.display = 'flex';
         playerWaitingContainer.style.display = 'none';
+        if (gameState !== GameState.ChoosingDestinationCards) {
+            playerTurnContainer.style.display = 'flex';
+        }
     }
 }
 
@@ -229,7 +254,6 @@ function getPlayerIndex() {
 async function deleteGameRequest() {
     let url = `http://localhost:5001/game/delete`;
 
-    console.log('deleting')
     var response = await fetch(url, {
         method: 'DELETE',
         headers: {
@@ -242,6 +266,101 @@ async function deleteGameRequest() {
     else {
         console.error(response)
     }
+}
+
+async function chooseDestinationsRequest(destinations) {
+    let url = `http://localhost:5001/game/DrawDestinationCards`;
+
+    let requestBody = {
+        playerIndex: playerIndex,
+        destinationCards: destinations
+    };
+
+    console.log(requestBody)
+
+    let response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (response.ok) {
+        let responseJson = await response.json();
+        console.log(responseJson);
+    }
+    else {
+        let errorResponse = await response.text();
+        console.error(errorResponse);
+    }
+}
+
+async function drawDestinationCardsRequest() {
+    let url = `http://localhost:5001/game/DrawDestinationCards?playerIndex=${playerIndex}`;
+
+    var response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+    if (response.ok) {
+        const responseJson = await response.json();
+        console.log(responseJson)
+        displayDestinationCards(responseJson.drawnDestinationCards);
+        console.log(responseJson)
+    }
+    else {
+        const errorText = await response.text();
+        console.error(errorText);
+    }
+}
+
+function displayDestinationCards(destinations) {
+    let chooseDestinationCardsContainer = document.getElementById('choose-destination-cards-container');
+    chooseDestinationCardsContainer.style.display = 'flex';
+
+    let playerTurnContainer = document.getElementById('messages-container__player-turn-message');
+    playerTurnContainer.style.display = 'none';
+
+    let destinationsList = document.getElementById('possible-destinations-list');;
+
+    destinations.forEach(destination => {
+        const originCity = getCityFromNumber(destination.origin);
+        const destinationCity = getCityFromNumber(destination.destination);
+
+        const div = document.createElement('div');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = `${originCity.name}-${destinationCity.name}`;
+
+        const span = document.createElement('span');
+        span.textContent = `${originCity.name} - ${destinationCity.name} ${destination.pointValue} p`;
+
+        span.addEventListener('mouseover', () => {
+            span.classList.add('hovered-destination-card');
+            hoveredCityNames.push(originCity.name);
+            hoveredCityNames.push(destinationCity.name);
+        });
+
+        span.addEventListener('mouseout', () => {
+            span.classList.remove('hovered-destination-card');
+            emptyHoveredCityNames();
+        });
+
+        checkbox.addEventListener('change', checkCheckboxes);
+
+        div.appendChild(checkbox);
+        div.appendChild(span);
+        destinationsList.appendChild(div);
+    });
+}
+
+function checkCheckboxes() {
+    const checkboxes = document.querySelectorAll('#possible-destinations-list input[type="checkbox"]');
+    const atLeastOneChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
+    chooseDestinationsButton.disabled = !atLeastOneChecked;
 }
 
 export async function updateGameState() {
@@ -262,7 +381,7 @@ export async function updateGameState() {
 }
 
 export function showMessage(message, isError = true, setTimout = true) {
-    //hide message or information container
+    //hide error or information container
     hideMessage(!isError);
     let container;
     let messageSpan;

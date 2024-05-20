@@ -23,9 +23,14 @@ namespace TicketToRide.Moves
             //if yes, allow the move; at the end if any of the cards are returned to the deck,
             //unmark them
 
-            var destinationCards = Game.Board.DestinationCards.Pop(3);
+            var destinationCards = Game.Board.DestinationCards.Take(3).ToList();
 
-            Game.GetPlayer(playerIndex).PendingDestinationCards.AddRange(destinationCards);
+            foreach(var card in destinationCards)
+            {
+                card.IsWaitingToBeChosen = true;
+            }
+
+            //Game.GetPlayer(playerIndex).PendingDestinationCards.AddRange(destinationCards);
 
             Game.GameState = Model.Enums.GameState.ChoosingDestinationCards;
 

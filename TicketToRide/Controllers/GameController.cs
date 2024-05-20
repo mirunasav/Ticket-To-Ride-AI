@@ -12,9 +12,12 @@ namespace TicketToRide.Controllers
     {
         private readonly GameService gameService;
 
-        public GameController(GameService gameService)
+        private readonly RouteService routeService;
+
+        public GameController(GameService gameService, RouteService routeService)
         {
             this.gameService = gameService;
+            this.routeService = routeService;
         }
 
         [HttpGet]
@@ -65,6 +68,26 @@ namespace TicketToRide.Controllers
             return Json(game);
         }
 
+        [HttpGet]
+        public IActionResult Route(string originCity, string destinationCity)
+        {
+            bool originExists = Enum.TryParse(originCity, out City origin);
+            bool destinationExists = Enum.TryParse(destinationCity, out City destination);
+
+            if (!originExists || !destinationExists)
+            {
+                return BadRequest("Origin or destination city does not exist");
+            }
+
+            var route = routeService.GetRoute(origin, destination);
+
+            if(route is null)
+            {
+                return NotFound("Route does not exist");
+            }
+
+            return Json(route);
+        }
 
         [HttpDelete]
         public IActionResult Delete()
@@ -125,7 +148,6 @@ namespace TicketToRide.Controllers
                 return BadRequest("Origin or destination city does not exist");
             }
 
-
             var response = gameService.CanClaimRoute(new CanClaimRouteRequest
             {
                 PlayerIndex = playerIndex,
@@ -182,7 +204,8 @@ namespace TicketToRide.Controllers
                 return Json(new
                 {
                     Message = claimRouteResponse.Message,
-                    playerRemainingCards = claimRouteResponse.PlayerRemainingCards
+                    playerRemainingCards = claimRouteResponse.PlayerRemainingCards,
+                    newlyCompletedDestinations = claimRouteResponse.NewlyCompletedDestinations
                 });
             }
             else
@@ -218,7 +241,6 @@ namespace TicketToRide.Controllers
         [HttpPost]
         public IActionResult DrawDestinationCards([FromBody] DrawDestinationCardsRequest request)
         {
-
             var response = gameService.ChooseDestinationCards(request);
 
             if (!response.IsValid)
@@ -246,6 +268,22 @@ namespace TicketToRide.Controllers
         {
             var result = gameService.CanRouteBeClaimed(origin, destination);
             return Json(result);
+        }
+
+        [HttpGet]
+        public IActionResult GetPlayerCompletedRoutes([FromQuery] int playerIndex)
+        {
+            var game = gameService.GetGameInstance();
+
+            if (game is null)
+            {
+                return NotFound("Game is null");
+            }
+
+            return Json(new
+            {
+                playerRoutes = game.Players.ElementAt(playerIndex).ClaimedRoutes
+            }) ;
         }
 
         [HttpGet]

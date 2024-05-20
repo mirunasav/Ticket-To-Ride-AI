@@ -7,7 +7,7 @@ namespace TicketToRide.Moves
 {
     public class ClaimRouteMove : Move
     {
-        public Model.GameBoard.Route Route {  get; set; }
+        public IList<Model.GameBoard.Route> Route {  get; set; }
 
         public TrainColor ColorUsed {  get; set; }
 
@@ -26,8 +26,11 @@ namespace TicketToRide.Moves
         {
             var player = Game.GetPlayer(playerIndex);
 
+            var length = Route.ElementAt(0).Length;
+            var pointValue = Route.ElementAt(0).PointValue;
+
             //remove cards
-            var removedCards = player.RemoveCards(ColorUsed, Route.Length);
+            var removedCards = player.RemoveCards(ColorUsed, length);
 
             if (!removedCards)
             {
@@ -39,13 +42,17 @@ namespace TicketToRide.Moves
             }
 
             //remove trains from player
-            player.RemainingTrains -= Route.Length;
+            player.RemainingTrains -= length;
 
             //add player points
-            player.Points += Route.PointValue;
+            player.Points += pointValue;
 
             //mark route as claimed
-            Game.MarkRouteAsClaimed(Route, player);
+            Game.MarkRouteAsClaimed(Route.ElementAt(0).Origin, Route.ElementAt(0).Destination, player, ColorUsed);
+
+            player.AddCompletedRoute(Route.ElementAt(0));
+
+            var newlyCompletedDestinations = player.GetNewlyCompletedDestinations();
 
             //change gameState
             Game.UpdateStateNextPlayerTurn();
@@ -54,7 +61,8 @@ namespace TicketToRide.Moves
             {
                 IsValid = true,
                 Message = ValidMovesMessages.PlayerHasClaimedRoute,
-                PlayerRemainingCards = Game.GetPlayer(playerIndex).Hand
+                PlayerRemainingCards = Game.GetPlayer(playerIndex).Hand,
+                NewlyCompletedDestinations = newlyCompletedDestinations
             };
         }
     }

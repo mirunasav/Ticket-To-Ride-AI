@@ -1,182 +1,236 @@
 body {
     height: 100vh;
-    margin:0;
+    margin: 0;
     display: flex;
 }
 
-#main-game-container{
+#main-game-container {
     display: flex;
 }
 
-#player-index{
+#player-index {
     display: none;
 }
 
-#main-container{
+#main-container {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-#messages-container{
+#messages-container {
     height: 10vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-top: 5px;
+}
+
+#messages-container__player-turn-message {
+    text-align: center;
+}
+
+#messages-container__error-message {
+    text-align: center;
+    color: red;
+    font-weight: bold;
+}
+
+#messages-container__information-message {
+    text-align: center;
+    color: green;
+    font-weight: bold;
+}
+
+#choose-destination-cards-container {
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
 
-#messages-container__player-turn-message{
-    text-align: center;
+#chooseDestinationsButton:disabled {
+    cursor: not-allowed;
+    position: relative;
 }
 
-#messages-container__error-message{
-    text-align: center;
-    color:red;
-    font-weight: bold;
+#chooseDestinationsButton:disabled::after {
+    content: "You must choose at least one destination";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s;
 }
 
-#messages-container__information-message{
-    text-align: center;
-    color:green;
-    font-weight: bold;
+#chooseDestinationsButton:disabled:hover::after {
+    opacity: 1;
+    visibility: visible;
 }
 
-#drawDestinationCardsButton{
+#possible-destinations-list {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    margin-inline: 5px;
+}
+
+#possible-destinations-list span {
+    margin-inline: 5px;
+}
+
+
+#drawDestinationCardsButton {
     margin-left: 10px;
 }
 
-#game-container{
+#game-container {
     display: flex;
-    flex-direction:column;
+    flex-direction: column;
     flex-grow: 1;
 }
 
-#board-and-deck-container{
+#board-and-deck-container {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
-    margin-left:20px;
+    margin-left: 20px;
     padding: 20px 20px;
 }
 
-canvas{
+canvas {
     display: flex;
     flex-direction: column;
     align-items: center;
-    order:1;
+    order: 1;
 }
 
-#train-card-deck-container{
+#train-card-deck-container {
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     align-items: center;
 }
 
-#player-train-cards-container img{
+#player-train-cards-container img {
     transform: rotate(90deg);
     margin-inline: -20px;
     z-index: -100;
 }
 
-#player-train-cards-container{
-   display : flex;
+#player-train-cards-container {
+    display: flex;
     flex-direction: row;
     align-items: flex-end;
     justify-content: flex-end;
-    gap:5px;
+    gap: 5px;
     margin-top: 10px;
-    margin-right:180px;
+    margin-right: 180px;
 }
 
-.train-card-container{
+.train-card-container {
     position: relative;
 }
 
-.card-count{
+.card-count {
     position: absolute;
-    top: 50%; 
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 1; 
-    color:white;
+    z-index: 1;
+    color: white;
     font-size: 40px;
-    text-shadow: 
-        -1.5px -1.5px 0 black,  
+    text-shadow:
+        -1.5px -1.5px 0 black,
         1.5px -1.5px 0 black,
         -1.5px 1.5px 0 black,
         1.5px 1.5px 0 black;
 }
-.train-card-image{
+
+.train-card-image {
     margin: 3px 10px;
-    height:10vh;
-    width : 8vw;
+    height: 10vh;
+    width: 8vw;
 }
 
-.train-deck-image{
+.train-deck-image {
     margin-bottom: 10px;
-    height:11vh;
-    width : 9vw;
+    height: 11vh;
+    width: 9vw;
     border: 3px solid brown;
 }
 
 .train-card-image:hover {
     cursor: pointer;
-    filter: brightness(115%); 
+    filter: brightness(115%);
 }
 
 .train-card-image:active {
     transform: translateY(2px);
 }
 
-.face-up-deck-image__unavailable{
-    filter: brightness(80%); 
-    cursor:not-allowed !important;
+.face-up-deck-image__unavailable {
+    filter: brightness(80%);
+    cursor: not-allowed !important;
 }
 
-.face-up-deck-image__unavailable:hover{
-    filter: brightness(80%) !important; 
-    cursor:not-allowed !important;
+.face-up-deck-image__unavailable:hover {
+    filter: brightness(80%) !important;
+    cursor: not-allowed !important;
 }
 
 
-#all-player-stats-container{
+#all-player-stats-container {
     width: 50vw;
 }
 
-.player-stats-container{
+.player-stats-container {
     display: inline;
     font-size: 20px;
 }
 
-.player-stats-container .player-name{
+.player-stats-container .player-name {
     font-weight: bold;
 }
 
-.player-stats-counts-container span{
+.player-stats-counts-container span {
     padding-inline: 10px;
 }
 
-#player-destination-cards-container{
+#player-destination-cards-container {
     margin-right: 20px;
+    padding-inline: 10px;
 }
 
-.destination-cards-title{
+.destination-cards-title {
     font-size: 18px;
     font-weight: bold;
 }
 
-#pending-destinations-container, #completed-destinations-container{
-    padding-left: 10px;;
+.hovered-destination-card {
+    color: purple;
+    cursor: pointer;
 }
 
-#player-stats-create-game-container{
-    display: flex;
-    width:20vw;
+#pending-destinations-container,
+#completed-destinations-container {
     padding-inline: 10px;
 }
 
-#newGameButton{
-    height:40px;
-    width:200px;
-    margin-top:20px;
+#player-stats-create-game-container {
+    display: flex;
+    width: 20vw;
+    padding-inline: 10px;
+}
+
+#newGameButton {
+    height: 40px;
+    width: 200px;
+    margin-top: 20px;
 }

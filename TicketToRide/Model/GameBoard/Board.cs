@@ -134,6 +134,7 @@ namespace TicketToRide.Model.GameBoard
             Routes.AddRoute(City.NewOrleans, City.Miami, TrainColor.Red, 6);
             Routes.AddRoute(City.Atlanta, City.Miami, TrainColor.Blue, 5);
             Routes.AddRoute(City.Charleston, City.Miami, TrainColor.Purple, 4);
+            Routes.AddRoute(City.Omaha, City.Denver, TrainColor.Purple, 4);
         }
 
         private void CreateDestinationCards()

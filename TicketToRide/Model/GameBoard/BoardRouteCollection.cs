@@ -24,32 +24,6 @@ namespace TicketToRide.Model.GameBoard
             return route != null;
         }
 
-        public Route ClaimRoute(City origin, City destination, TrainColor trainColor, int length, Player player)
-        {
-            var route = GetRoute(origin, destination, trainColor, length);
-
-            if (route == null)
-            {
-                throw new ArgumentNullException(nameof(route));
-            }
-
-            route.IsClaimed = true;
-            route.ClaimedBy = player.Color;
-
-            var points = route.PointValue;
-
-            player.Points += points;
-            player.RemainingTrains -= route.Length;
-
-            //remove cards from player hand
-            var cardsToRemove = player.Hand.Take(route.Length).Where(card => card.Color == route.Color).ToList();
-            foreach (var card in cardsToRemove)
-            {
-                player.Hand.Remove(card);
-            }
-            return route;
-        }
-
         public bool CanPlayerClaimRoute(Route route, Player player)
         {
             //aici? sau in alt serviciu
@@ -71,6 +45,7 @@ namespace TicketToRide.Model.GameBoard
 
             return trainColorsWhichCanBeUsed.Count != 0;
         }
+
         public IList<TrainColor> ColorsWithWhichRouteCanBeClaimed(Route route, Player player)
         {
             if (route == null)
@@ -112,7 +87,7 @@ namespace TicketToRide.Model.GameBoard
             return cardsWhichCanBeUsed;
         }
 
-        public Route? GetRoute(
+        public IList<Route> GetRoute(
             City origin,
             City destination,
             TrainColor trainColor = default,
@@ -133,7 +108,14 @@ namespace TicketToRide.Model.GameBoard
                 routeQuery = routeQuery.Where(r => r.Length == length);
             }
 
-            return routeQuery.FirstOrDefault();
+            return routeQuery.ToList();
+        }
+
+        public Route? GetRoute(City origin, City destination, TrainColor trainColor)
+        {
+            return Routes.Where(r => (r.Color == trainColor || r.Color == TrainColor.Grey) &&
+            ((r.Origin == origin && r.Destination == destination)
+                || (r.Origin == destination && r.Destination == origin))).FirstOrDefault();
         }
     }
 }

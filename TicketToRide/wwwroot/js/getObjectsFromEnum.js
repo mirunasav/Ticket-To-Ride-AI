@@ -46,6 +46,15 @@ export function getCityFromNumber(cityNumber){
     return cities[cityNumber];
 }
 
+export function getCityIndexFromName(cityName) {
+    for (const [index, city] of Object.entries(cities)) {
+        if (city.name === cityName) {
+            return parseInt(index);
+        }
+    }
+    return null; // Return null if the city is not found
+}   
+ 
 export function getGameStateFromNumber(gameStateNumber){
     switch (gameStateNumber) {
         case 0:

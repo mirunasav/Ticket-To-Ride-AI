@@ -17,6 +17,10 @@ namespace TicketToRide.Model.Constants
         public const string PlayerDoesNotHaveResources = "The player does not have the necessary train cards to claim this route";
         public const string InvalidColorForRoute = "This train color cannot be used to claim this route";
 
+        public const string DestinationDoesNotExist = "The destination with this origin and this destination does not exist";
+        public const string DestinationIsNotAnOption = "This destination was not an option";
+        public const string InvalidCityNumber = "The destination or origin cities are invalid";
+
         public const string NotEnoughDestinationCards = "There are not enough destination cards left";
     }
 }

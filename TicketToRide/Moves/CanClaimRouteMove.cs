@@ -9,11 +9,11 @@ namespace TicketToRide.Moves
     {
         public City Origin { get; set; }
 
-        public City Destination {  get; set; }
+        public City Destination { get; set; }
 
-        public Model.GameBoard.Route Route {  get; set; }
+        public IList<Model.GameBoard.Route> Route { get; set; }
 
-        public CanClaimRouteMove(Game game, int playerIndex, City origin, City destination) 
+        public CanClaimRouteMove(Game game, int playerIndex, City origin, City destination)
             : base(game, playerIndex)
         {
             this.Origin = origin;
@@ -28,11 +28,18 @@ namespace TicketToRide.Moves
                 Game.GameState = GameState.DecidingAction;
             }
 
-            //check that the player can claim this route
-            var colorsWithWhichRouteCanBeClaimed = Game.Board.Routes
-                .ColorsWithWhichRouteCanBeClaimed(Route, Game.Players.ElementAt(playerIndex));
+            var colorsWithWhichRoutesCanBeClaimed = new List<TrainColor>();
 
-            if (colorsWithWhichRouteCanBeClaimed.Count == 0)
+            foreach (var route in Route)
+            {
+                //check that the player can claim this route
+                var possibleColors = Game.Board.Routes
+                    .ColorsWithWhichRouteCanBeClaimed(route, Game.Players.ElementAt(playerIndex));
+
+                colorsWithWhichRoutesCanBeClaimed.AddRange(possibleColors);
+            }
+
+            if (colorsWithWhichRoutesCanBeClaimed.Count == 0)
             {
                 return new MakeMoveResponse
                 {
@@ -46,10 +53,12 @@ namespace TicketToRide.Moves
                 {
                     IsValid = true,
                     Message = ValidMovesMessages.PlayerCanClaimRoute,
-                    TrainColorsWhichCanBeUsed = colorsWithWhichRouteCanBeClaimed,
+                    TrainColorsWhichCanBeUsed = colorsWithWhichRoutesCanBeClaimed.Distinct().ToList(),
                     Route = Route
                 };
             }
         }
+
     }
 }
+

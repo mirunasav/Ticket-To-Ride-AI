@@ -26,6 +26,12 @@ namespace TicketToRide.Model.GameBoard
             game = null;
         }
 
+        public int GetNumberOfPlayers()
+        {
+            return game.Players.Count;
+        }
+
+
         #region private
         private List<Player> InitPlayers(int numberOfPlayers)
         {

@@ -1,6 +1,8 @@
-﻿using TicketToRide.Model.Cards;
+﻿using QuickGraph;
+using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
+using Route = TicketToRide.Model.GameBoard.Route;
 
 namespace TicketToRide.Model.Players
 {
@@ -24,6 +26,7 @@ namespace TicketToRide.Model.Players
         public int NumberOfPendingDestinationCards { get; set; }
 
         public int NumberOfCompletedDestinationCards { get; set;}
+        public RouteGraph ClaimedRoutes { get; private set; }
 
         //private Dictionary<PlayerActions, Action> ActionMap { get; set; }
 
@@ -31,6 +34,7 @@ namespace TicketToRide.Model.Players
         {
             this.Name = name;
             this.Color = color;
+            ClaimedRoutes = new RouteGraph();
         }
 
         //for now : draw 2 cards from the hidden deck
@@ -133,7 +137,41 @@ namespace TicketToRide.Model.Players
 
             return hiddentStatsPlayer;
         }
+        public void AddCompletedRoute(Route route)
+        {
+            if (route.IsClaimed && route.ClaimedBy == Color)
+            {
+                ClaimedRoutes.AddRoute(route);
+            }
+        }
 
+        public void MarkDestinationAsCompleted(DestinationCard destinationCard)
+        {
+            PendingDestinationCards.Remove(destinationCard);
+            CompletedDestinationCards.Add(destinationCard);
+        }
+
+        public IList<DestinationCard> GetNewlyCompletedDestinations()
+        {
+            var newlyCompletedDestinations = new List<DestinationCard>();
+
+            foreach (var card in PendingDestinationCards)
+            {
+                var isCompleted = ClaimedRoutes.AreConnected(card.Origin, card.Destination);
+
+                if (isCompleted)
+                {
+                    newlyCompletedDestinations.Add(card);
+                }
+            }
+
+            foreach(var destination in newlyCompletedDestinations)
+            {
+                MarkDestinationAsCompleted(destination);
+            }
+
+            return newlyCompletedDestinations;
+        }
         private void DrawTrainCard(Board board)
         {
             var cards = board.Deck.Pop(2);

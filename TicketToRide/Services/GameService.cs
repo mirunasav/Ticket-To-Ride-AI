@@ -1,5 +1,6 @@
 ﻿using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
+using TicketToRide.Model.Cards;
 using TicketToRide.Model.Constants;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
@@ -46,7 +47,7 @@ namespace TicketToRide.Services
 
         public Game GetGameInstance()
         {
-          return gameProvider.GetGame();
+            return gameProvider.GetGame();
         }
 
         public void DeleteGame()
@@ -151,9 +152,6 @@ namespace TicketToRide.Services
                 };
             }
 
-            //does this move need extra validation? => if there are 3 remaining dest cards
-            //if round is not final? see rules
-
             var validateMove = moveValidatorService.ValidateDrawDestinationCardsMove(drawDestinationCardMove);
             if (!validateMove.IsValid)
             {
@@ -166,10 +164,49 @@ namespace TicketToRide.Services
 
         public MakeMoveResponse ChooseDestinationCards(DrawDestinationCardsRequest drawDestinationCardsRequest)
         {
+            var chosenDestinations = new List<DestinationCard>();
+            var notChosenDestinations = new List<DestinationCard>();
+
+            foreach (var destination in drawDestinationCardsRequest.DestinationCards)
+            {
+                bool originExists = Enum.TryParse(destination.Origin, out City originCity);
+                bool destinationExists = Enum.TryParse(destination.Destination, out City destinationCity);
+
+                if (!originExists || !destinationExists)
+                {
+                    return new MakeMoveResponse
+                    {
+                        IsValid = false,
+                        Message = InvalidMovesMessages.InvalidCityNumber
+                    };
+                }
+
+                var destinationOption = GetDestinationCard(originCity, destinationCity);
+
+                if (destinationOption is null)
+                {
+                    return new MakeMoveResponse
+                    {
+                        IsValid = false,
+                        Message = InvalidMovesMessages.DestinationDoesNotExist
+                    };
+                }
+
+                if (destination.IsChosen)
+                {
+                    chosenDestinations.Add(destinationOption);
+                }
+                else
+                {
+                    notChosenDestinations.Add(destinationOption);
+                }
+            }
+
             var chooseDestinationCardMove = new ChooseDestinationCardMove(
                 game,
                 drawDestinationCardsRequest.PlayerIndex,
-                drawDestinationCardsRequest.DestinationCards);
+                chosenDestinations,
+                notChosenDestinations);
 
             var canMakeMoveMessage = CanMakeMove(chooseDestinationCardMove);
 
@@ -280,9 +317,9 @@ namespace TicketToRide.Services
             var players = new List<Player>();
             //foreach player that is not our player, get hidden statistics:
             //name, points, remainingTrains, playerColor, number of Destinationcards, number of cards in hand 
-            for(int i = 0; i < game.Players.Count; i++)
+            for (int i = 0; i < game.Players.Count; i++)
             {
-                if(i == playerIndex)
+                if (i == playerIndex)
                 {
                     players.Add(game.Players[i]);
                 }
@@ -295,6 +332,14 @@ namespace TicketToRide.Services
             var newGame = new Game(game.Board, players, game.GameState, game.PlayerTurn);
 
             return newGame;
+        }
+
+        private DestinationCard? GetDestinationCard(City originCity, City destinationCity)
+        {
+            return game.Board.DestinationCards
+                .Where(d => (d.Origin == originCity && d.Destination == destinationCity)
+            || (d.Destination == originCity && d.Origin == destinationCity))
+                .FirstOrDefault();
         }
 
     }

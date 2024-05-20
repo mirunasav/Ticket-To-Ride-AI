@@ -1,4 +1,5 @@
-﻿using TicketToRide.Model.Enums;
+﻿using TicketToRide.Model.Cards;
+using TicketToRide.Model.Enums;
 using TicketToRide.Model.Players;
 
 namespace TicketToRide.Model.GameBoard
@@ -30,7 +31,7 @@ namespace TicketToRide.Model.GameBoard
 
         public ValidateActionMessage ValidateAction(PlayerActions action, int playerIndex)
         {
-            if(playerIndex != PlayerTurn)
+            if (playerIndex != PlayerTurn)
             {
                 return new ValidateActionMessage
                 {
@@ -61,7 +62,7 @@ namespace TicketToRide.Model.GameBoard
 
         public Player GetPlayer(int playerIndex)
         {
-            if(playerIndex < 0 || playerIndex >= Players.Count)
+            if (playerIndex < 0 || playerIndex >= Players.Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(playerIndex));
             }
@@ -69,18 +70,15 @@ namespace TicketToRide.Model.GameBoard
             return Players.ElementAt(playerIndex);
         }
 
-        public void MarkRouteAsClaimed(Route route, Player player)
+        public void MarkRouteAsClaimed(City origin, City destination, Player player, TrainColor colorUsed)
         {
-            ArgumentNullException.ThrowIfNull(route);
+            var foundRoute = Board.Routes.GetRoute(origin, destination, colorUsed);
 
-            var foundRoute = Board.Routes.GetRoute(route.Origin, route.Destination);
+            ArgumentNullException.ThrowIfNull(nameof(foundRoute));
 
-            ArgumentNullException.ThrowIfNull(foundRoute);
-
-            foundRoute.IsClaimed = true;
-            foundRoute.ClaimedBy = player.Color;
+                foundRoute.IsClaimed = true;
+                foundRoute.ClaimedBy = player.Color;
         }
-
         #region private
         private void ChangePlayerTurn()
         {

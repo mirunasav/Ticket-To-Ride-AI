@@ -1,4 +1,5 @@
 import { PlayerColor, TrainColor } from "./GameObjects.js";
+import { hoveredCityNames } from "./destinationCards.js";
 import { cities, claimedRoutes, playerIndex, showMessage } from "./game.js";
 import { getPlayerColorFromNumber } from "./getObjectsFromEnum.js";
 import { buildColorsWithWhichRouteCanBeClaimedMessage } from "./trainCardsDeck.js";
@@ -38,12 +39,11 @@ export function drawBoard() {
         image(boardImg, 0, 0, width, height); // Draw the board image
     }
     for (const city of cities) {
-        drawCityCircle(city, selectedCities.includes(city));
+        drawCityCircle(city, selectedCities.includes(city), hoveredCityNames.includes(city.name));
     }
     for (const route of claimedRoutes) {
-       // drawClaimedRoute(route);
+        drawClaimedRoute(route);
     }
-
 }
 
 window.windowResized = function () {
@@ -68,10 +68,13 @@ function handleClick() {
     drawCityCircle(x, y)
 }
 
-function drawCityCircle(city, isSelected = false) {
+function drawCityCircle(city, isSelected = false, isDestinationHovered = false) {
     let d = dist(mouseX, mouseY, city.x, city.y);
     // If the mouse is over the ellipse, change its color
-    if (isSelected) {
+    if(isDestinationHovered){
+        fill(0, 0, 0);
+    }
+    else if (isSelected) {
         fill(0, 255, 0); // Change color to green
     }
     else if (d < 5) { // Adjust the radius (5) as needed
@@ -84,8 +87,8 @@ function drawCityCircle(city, isSelected = false) {
 }
 
 function drawClaimedRoute(route) {
-    let point1 = createVector(route.origin.x, route.destination.y);
-    let point2 = createVector(route.origin.x, route.destination.y);
+    let point1 = createVector(route.origin.x, route.origin.y);
+    let point2 = createVector(route.destination.x, route.destination.y);
 
     changeStroke(route.claimedBy)
 
@@ -126,8 +129,6 @@ async function changeSelectedCities(city) {
     if (selectedCities.length == 2) {
         await checkIfRouteExists(selectedCities);
     }
-
-    console.log(selectedCities)
 }
 
 async function checkIfRouteExists(selectedCities) {
@@ -186,8 +187,7 @@ async function tryToClaimRoute(origin, destination) {
 function changeStroke(playerColor) {
     strokeWeight(4);
 
-    let color = getPlayerColorFromNumber(playerColor);
-    switch (color) {
+    switch (playerColor) {
         case PlayerColor.Blue:
             stroke(0, 0, 255);
             return;
