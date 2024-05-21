@@ -248,12 +248,28 @@ namespace TicketToRide.Controllers
                 return BadRequest(response.Message);
             }
 
-            if (response is DrawDestinationCardsResponse drawDestinationCardResponse)
+            return Json(new
+            {
+                Message = response.Message
+            });
+        }
+
+        [HttpGet]
+        public IActionResult ComputeGameOutcome()
+        {
+            var response = gameService.ComputeGameOutcome();
+
+            if (!response.IsValid)
+            {
+                return BadRequest(response.Message);
+            }
+
+            if (response is GetGameWinnerResponse getGameWinnerResponse)
             {
                 return Json(new
                 {
-                    Message = drawDestinationCardResponse.Message,
-                    DrawnDestinationCards = drawDestinationCardResponse.DrawnDestinationCards
+                    Message = getGameWinnerResponse.Message,
+                    Winners = getGameWinnerResponse.Winners
                 });
             }
             else

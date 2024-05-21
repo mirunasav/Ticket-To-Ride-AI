@@ -68,7 +68,7 @@ namespace TicketToRide.Model.GameBoard
             Routes.AddRoute(City.Helena, City.Omaha, TrainColor.Red, 5);
             Routes.AddRoute(City.Omaha, City.Duluth, TrainColor.Grey, 2);
             Routes.AddRoute(City.Omaha, City.Duluth, TrainColor.Grey, 2);
-            Routes.AddRoute(City.Duluth, City.Chicago, TrainColor.Red, 4);
+            Routes.AddRoute(City.Duluth, City.Chicago, TrainColor.Red, 3);
             Routes.AddRoute(City.Omaha, City.Chicago, TrainColor.Blue, 4);
             Routes.AddRoute(City.Chicago, City.Toronto, TrainColor.White, 4);
             Routes.AddRoute(City.Chicago, City.Pittsburgh, TrainColor.Orange, 3);

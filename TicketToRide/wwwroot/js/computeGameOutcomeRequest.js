@@ -1,5 +1,5 @@
-export async function getGameStateRequest() {
-    let url = `http://localhost:5001/game/GetGameState`;
+export async function computeGameOutcomeRequest() {
+    let url = `http://localhost:5001/game/ComputeGameOutcome`;
 
     var response = await fetch(url, {
         method: 'GET',
@@ -10,6 +10,7 @@ export async function getGameStateRequest() {
 
     if (response.ok) {
         let responseJson = await response.json();
+        console.log(responseJson)
         return responseJson;
     }
     else {

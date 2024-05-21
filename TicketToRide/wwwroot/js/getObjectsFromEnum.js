@@ -42,7 +42,7 @@ export function getTrainColorFromNumber(colorNumber) {
     }
 }
 
-export function getCityFromNumber(cityNumber){
+export function getCityFromNumber(cityNumber) {
     return cities[cityNumber];
 }
 
@@ -53,9 +53,9 @@ export function getCityIndexFromName(cityName) {
         }
     }
     return null; // Return null if the city is not found
-}   
- 
-export function getGameStateFromNumber(gameStateNumber){
+}
+
+export function getGameStateFromNumber(gameStateNumber) {
     switch (gameStateNumber) {
         case 0:
             return GameState.WaitingForPlayerMove;
@@ -65,6 +65,8 @@ export function getGameStateFromNumber(gameStateNumber){
             return GameState.DecidingAction;
         case 3:
             return GameState.ChoosingDestinationCards;
+        case 4:
+            return GameState.Ended;
         default:
             return null;
     }

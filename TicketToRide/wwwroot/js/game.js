@@ -1,12 +1,14 @@
 import { DestinationCard, TrainCard, Player, Route } from "./GameObjects.js";
 import { drawBoard, preloadBoard, setupBoard } from "./board.js";
 import { initializeCities } from "./city.js";
+import { computeGameOutcomeRequest } from "./computeGameOutcomeRequest.js";
 import { displayPlayerDestinationCards, emptyHoveredCityNames, hoveredCityNames } from "./destinationCards.js";
 import { GameState } from "./gameStates.js";
 import { getGameStateRequest } from "./getGameStateRequest.js";
 import { getCityFromNumber, getCityIndexFromName, getGameStateFromNumber } from "./getObjectsFromEnum.js";
 import { initDisplayPlayerStatistics } from "./playerStatistics.js";
 import { chooseTrainCardColor, displayFaceUpDeckImages, displayPlayerTrainCards, preloadTrainCardImages } from "./trainCardsDeck.js";
+import { emptyHtmlContainer } from "./utils.js";
 
 export let playerTurn;
 export let players = [];
@@ -23,6 +25,7 @@ export let claimedRoutes = [];
 export let gameInstance = {};
 
 export let playerIndex = getPlayerIndex();
+let displayingGameResults = false;
 
 const playerStatsContainer = document.getElementById('all-player-stats-container');
 const messagesContainer = document.getElementById('messages-container');
@@ -288,11 +291,14 @@ async function chooseDestinationsRequest(destinations) {
 
     if (response.ok) {
         let responseJson = await response.json();
-        console.log(responseJson);
+        console.log("chosen dest", responseJson);
+        hideDestinationCardsChoices();
+        await updateGameState();
     }
     else {
         let errorResponse = await response.text();
         console.error(errorResponse);
+        showMessage(errorResponse);
     }
 }
 
@@ -357,6 +363,13 @@ function displayDestinationCards(destinations) {
     });
 }
 
+function hideDestinationCardsChoices() {
+    let chooseDestinationCardsContainer = document.getElementById('choose-destination-cards-container');
+    chooseDestinationCardsContainer.style.display = 'none';
+
+    emptyHtmlContainer('possible-destinations-list');
+}
+
 function checkCheckboxes() {
     const checkboxes = document.querySelectorAll('#possible-destinations-list input[type="checkbox"]');
     const atLeastOneChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
@@ -371,6 +384,11 @@ export async function updateGameState() {
 
         playerTurn = updatedGameState.playerTurn;
         gameState = getGameStateFromNumber(updatedGameState.gameState);
+        if (gameState == GameState.Ended && displayingGameResults == false) {
+            //make request to add up final points and show pop up with finished result and winner
+            let gameOutcome = await computeGameOutcomeRequest();
+            displayWinners(gameOutcome.winners);
+        }
         if (oldGameState !== gameState || playerTurn !== oldPlayerTurn) {
             displayGame(true, numberOfPlayers)
         }
@@ -393,12 +411,9 @@ export function showMessage(message, isError = true, setTimout = true) {
         container = document.getElementById('messages-container__information-message');
     }
 
-    console.log(message)
     messageSpan = container.querySelector('span')
     messageSpan.innerHTML = message;
     container.style.display = "inline";
-
-    console.log(`msg span : ${messageSpan.innerHTML}`)
 
     if (setTimout) {
         // Fade out the message after 3 seconds
@@ -424,6 +439,72 @@ export function hideMessage(isError = true, container = null, span = null) {
     container.style.display = "none";
 }
 
+function displayWinners(winners) {
+    displayingGameResults = true;
+    const currentPlayer = players[playerIndex];
+    let winnerPlayers = [];
+    let message = '';
+    let playerPoints = '';
+
+    for (const winner of winners) {
+        winnerPlayers.push(new Player(
+            winner.name,
+            winner.points,
+            winner.remainingTrains,
+            winner.color,
+            winner.pendingDestinationCards,
+            winner.hand,
+            winner.completedDestinationCards,
+            winner.numberOfTrainCards,
+            winner.numberOfPendingDestinationCards,
+            winner.numberOfCompletedDestinationCards,
+            winner.claimedRoutes
+        ))
+    }
+
+    //if there is one winner
+    if (winners.length === 1) {
+        console.log(winnerPlayers)
+        console.log(currentPlayer)
+        if (winnerPlayers[0].name == currentPlayer.name) {
+            message = 'You Won!';
+        }
+        else {
+            message = `You Lost :( The winner is ${winnerPlayers[0].name}.`;
+        }
+    }
+    else {
+        //there are more winners: there is a draw
+        if (winnerPlayers.includes(currentPlayer)) {
+            message = 'You are one of the winners! ';
+        }
+        message += 'The winners are: ';
+        for (const winner of winnerPlayers) {
+            message += `${winner.name} - ${winner.points} p\n`;
+            playerPoints += `${winner.name} - ${winner.points} p\n`;
+        }
+    }
+
+    let htmlContent = '<div>';
+    htmlContent +=`<div>${message}</div>`
+    // Concatenate player names and points
+    players.forEach((player) => {
+        htmlContent += `<div>${player.name} : ${player.points} p</div>`;
+    });
+
+    htmlContent += '</div>';
+
+    // Display message using SweetAlert
+    Swal.fire({
+        title: "Game Over",
+        html: htmlContent,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            displayingGameResults = false;
+            document.getElementById("player-points").textContent = playerPoints;
+        }
+    });
+}
 
 window.preload = function () {
     preloadBoard();

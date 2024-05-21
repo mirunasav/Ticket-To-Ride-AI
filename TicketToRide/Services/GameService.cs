@@ -229,6 +229,73 @@ namespace TicketToRide.Services
             return response;
         }
 
+        public MakeMoveResponse ComputeGameOutcome()
+        {
+            if (game.GameState != GameState.Ended)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = InvalidMovesMessages.GameNotEndedYet
+                };
+            }
+
+            if (!game.IsOutcomeComputed)
+            {
+                ComputeFinalPoints();
+            }
+
+            var winners = GetWinner();
+
+            return new GetGameWinnerResponse
+            {
+                IsValid = true,
+                Message = ValidMovesMessages.Ok,
+                Winners = winners
+            };
+        }
+
+        public void ComputeFinalPoints()
+        {
+            foreach (var player in game.Players)
+            {
+                //add route points
+                foreach (var completedDestination in player.CompletedDestinationCards)
+                {
+                    player.Points += completedDestination.PointValue;
+                }
+
+                foreach (var pendingDestination in player.PendingDestinationCards)
+                {
+                    player.Points -= pendingDestination.PointValue;
+                }
+            }
+            /* to do : add longest continuous path bonus */
+            game.IsOutcomeComputed = true;
+        }
+
+        public IList<Player> GetWinner()
+        {
+            var mostPoints = game.Players.Select(p => p.Points).Max();
+
+            var playersWithMostPoints = game.Players.Where(p => p.Points == mostPoints).ToList();
+
+            if (playersWithMostPoints.Count == 1)
+            {
+                return playersWithMostPoints;
+            }
+
+            var mostCompletedDestinations = playersWithMostPoints.Select(p => p.CompletedDestinationCards.Count).Max();
+
+            var playersWithMostDestinationCards = playersWithMostPoints.Where(p => p.CompletedDestinationCards.Count == mostCompletedDestinations).ToList();
+
+            if (playersWithMostDestinationCards.Count == 1)
+            {
+                return playersWithMostDestinationCards;
+            }
+
+            return playersWithMostDestinationCards;
+        }
         #region frontend
         public MakeMoveResponse CanRouteBeClaimed(string origin, string destination)
         {
@@ -341,6 +408,7 @@ namespace TicketToRide.Services
             || (d.Destination == originCity && d.Origin == destinationCity))
                 .FirstOrDefault();
         }
+
 
     }
 }

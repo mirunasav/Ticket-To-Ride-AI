@@ -14,6 +14,10 @@ namespace TicketToRide.Model.GameBoard
 
         public GameState GameState { get; set; } = GameState.WaitingForPlayerMove;
 
+        public bool IsFinalTurn { get; set; } = false;
+
+        public bool IsOutcomeComputed { get; set; } = false;
+
         public Game(Board board, IList<Player> players)
         {
             this.Board = board;
@@ -44,7 +48,6 @@ namespace TicketToRide.Model.GameBoard
             {
                 case PlayerActions.DrawTrainCard:
                     return ValidateDrawTrainCardAction(playerIndex);
-                    break;
                 default:
                     return new ValidateActionMessage
                     {
@@ -56,8 +59,17 @@ namespace TicketToRide.Model.GameBoard
 
         public void UpdateStateNextPlayerTurn()
         {
-            GameState = GameState.WaitingForPlayerMove;
+            // if the last player had his turn and it was the final turn, finish game
+            if(PlayerTurn == Players.Count - 1 && IsFinalTurn)
+            {
+                GameState = GameState.Ended;
+                return;
+            }
+
             ChangePlayerTurn();
+            GameState = GameState.WaitingForPlayerMove;
+
+            UpdateIsFinalTurn();
         }
 
         public Player GetPlayer(int playerIndex)
@@ -89,6 +101,18 @@ namespace TicketToRide.Model.GameBoard
             }
 
             PlayerTurn += 1;
+        }
+
+        private void UpdateIsFinalTurn()
+        {
+            foreach(var player in Players)
+            {
+                if(player.RemainingTrains <= 43)
+                {
+                    IsFinalTurn = true;
+                    return;
+                }
+            }
         }
 
         private ValidateActionMessage ValidateDrawTrainCardAction(int playerIndex)
