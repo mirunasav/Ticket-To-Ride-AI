@@ -107,7 +107,7 @@ namespace TicketToRide.Model.GameBoard
         {
             foreach(var player in Players)
             {
-                if(player.RemainingTrains <= 43)
+                if(player.RemainingTrains <= 2)
                 {
                     IsFinalTurn = true;
                     return;

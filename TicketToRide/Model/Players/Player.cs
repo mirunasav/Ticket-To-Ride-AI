@@ -13,7 +13,10 @@ namespace TicketToRide.Model.Players
         public int Points { get; set; } = 0;
 
         public int RemainingTrains { get; set; } = 45;
+
         public PlayerColor Color { get; set; }
+
+        public int PlayerIndex { get; set; } = 0;
 
         public List<DestinationCard> PendingDestinationCards { get; set; } = new List<DestinationCard>();
 
@@ -26,15 +29,19 @@ namespace TicketToRide.Model.Players
         public int NumberOfPendingDestinationCards { get; set; }
 
         public int NumberOfCompletedDestinationCards { get; set;}
+
         public RouteGraph ClaimedRoutes { get; private set; }
+
+        public bool IsBot { get; set; } = false;
 
         //private Dictionary<PlayerActions, Action> ActionMap { get; set; }
 
-        public Player(string name, PlayerColor color)
+        public Player(string name, PlayerColor color, int index)
         {
             this.Name = name;
             this.Color = color;
             ClaimedRoutes = new RouteGraph();
+            PlayerIndex = index;
         }
 
         //for now : draw 2 cards from the hidden deck
@@ -126,7 +133,7 @@ namespace TicketToRide.Model.Players
 
         public Player GetHiddenStatisticsPlayer()
         {
-            var hiddentStatsPlayer = new Player(Name, Color)
+            var hiddentStatsPlayer = new Player(Name, Color, PlayerIndex)
             {
                 Points = Points,
                 RemainingTrains = RemainingTrains,

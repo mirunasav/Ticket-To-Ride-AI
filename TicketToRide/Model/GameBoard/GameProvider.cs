@@ -7,9 +7,9 @@ namespace TicketToRide.Model.GameBoard
     {
         private Game game;
 
-        public Game InitializeGame(int numberOfPlayers)
+        public Game InitializeGame(int numberOfPlayers, List<PlayerType> playerTypes)
         {
-            var players = InitPlayers(numberOfPlayers);
+            var players = InitPlayers(numberOfPlayers, playerTypes);
             var board = new Board();
             DealCards(board, players);
             game = new Game(board, players);
@@ -33,7 +33,7 @@ namespace TicketToRide.Model.GameBoard
 
 
         #region private
-        private List<Player> InitPlayers(int numberOfPlayers)
+        private List<Player> InitPlayers(int numberOfPlayers, List<PlayerType> playerTypes)
         {
             var playerList = new List<Player>();
             var playerColors = new List<PlayerColor>();
@@ -41,15 +41,24 @@ namespace TicketToRide.Model.GameBoard
             InitPlayerColors(numberOfPlayers, playerColors);
             for (int i = 0; i < numberOfPlayers; i++)
             {
-                playerList.Add(InitPlayer(i, playerColors));
+
+                playerList.Add(InitPlayer(i, playerTypes[i], playerColors));
             }
             return playerList;
         }
 
-        private static Player InitPlayer(int index, IList<PlayerColor> playerColors)
+        private static Player InitPlayer(int index, PlayerType playerType, IList<PlayerColor> playerColors)
         {
             var playerColor = GetRandomColor(playerColors);
-            return new Player($"player{index + 1}", playerColor);
+            switch (playerType)
+            {
+                case PlayerType.Human:
+                    return new Player($"player{index + 1}", playerColor, index);
+                case PlayerType.RandomDecisionBot:
+                    return new RandomDecisionBot($"player{index + 1}", playerColor, index);
+                default:
+                    return new Player($"player{index + 1}", playerColor, index);
+            }
         }
 
         private static void InitPlayerColors(int numberOfPlayers, IList<PlayerColor> playerColors)

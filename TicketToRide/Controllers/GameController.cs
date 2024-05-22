@@ -4,6 +4,7 @@ using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
 using TicketToRide.Model.Constants;
 using TicketToRide.Model.Enums;
+using TicketToRide.Model.GameBoard;
 using TicketToRide.Services;
 
 namespace TicketToRide.Controllers
@@ -20,15 +21,45 @@ namespace TicketToRide.Controllers
             this.routeService = routeService;
         }
 
-        [HttpGet]
-        public IActionResult NewGame(int numberOfPlayers)
+        [HttpPost]
+        public IActionResult NewGame([FromBody] NewGameRequest newGameRequest)
         {
-            if (numberOfPlayers < 2 || numberOfPlayers > 4)
+            if (newGameRequest.NumberOfPlayers < 2 || newGameRequest.NumberOfPlayers > 4)
             {
                 return BadRequest("Number of Players needs to be between 2 and 4");
             }
 
-            var game = gameService.InitializeGame(numberOfPlayers);
+            var playerTypes = new List<PlayerType>();
+
+            if (newGameRequest.PlayerTypes != null)
+            {
+                if (newGameRequest.PlayerTypes.Count != newGameRequest.NumberOfPlayers)
+                {
+                    return BadRequest("Invalid number of player types provided");
+                }
+
+                foreach (var type in newGameRequest.PlayerTypes)
+                {
+                    bool typeExists = Enum.TryParse(type, out PlayerType playerType);
+
+                    if (!typeExists)
+                    {
+                        return BadRequest("Invalid playerType");
+                    }
+                    playerTypes.Add(playerType);
+                }
+
+            }
+            else
+            {
+                for (int i = 0; i < newGameRequest.NumberOfPlayers; i++)
+                {
+                    playerTypes.Add(PlayerType.Human);
+                }
+            }
+
+            var game = gameService.InitializeGame(newGameRequest.NumberOfPlayers, playerTypes);
+
             return Json(game);
         }
 
@@ -81,7 +112,7 @@ namespace TicketToRide.Controllers
 
             var route = routeService.GetRoute(origin, destination);
 
-            if(route is null)
+            if (route is null)
             {
                 return NotFound("Route does not exist");
             }
@@ -299,7 +330,7 @@ namespace TicketToRide.Controllers
             return Json(new
             {
                 playerRoutes = game.Players.ElementAt(playerIndex).ClaimedRoutes
-            }) ;
+            });
         }
 
         [HttpGet]

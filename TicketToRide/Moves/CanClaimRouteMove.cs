@@ -23,10 +23,10 @@ namespace TicketToRide.Moves
         public override MakeMoveResponse Execute()
         {
             //change game state
-            if (Game.GameState == GameState.WaitingForPlayerMove)
-            {
-                Game.GameState = GameState.DecidingAction;
-            }
+            //if (Game.GameState == GameState.WaitingForPlayerMove)
+            //{
+            //    Game.GameState = GameState.DecidingAction;
+            //}
 
             var colorsWithWhichRoutesCanBeClaimed = new List<TrainColor>();
 
