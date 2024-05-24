@@ -94,7 +94,7 @@ csx
 
 # Windows Store app package directory
 AppPackages/
-
+node_modules/
 # Others
 [Bb]in
 [Oo]bj
