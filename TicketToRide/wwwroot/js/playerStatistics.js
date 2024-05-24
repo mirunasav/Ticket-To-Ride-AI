@@ -71,8 +71,8 @@ export function initDisplayPlayerStatistics(players, playerIndex) {
             : '?';
 
         const pendingDestinationCards = player === currentPlayer
-            ? player.pendingDestinationCards.length
-            : player.numberOfPendingDestinationCards;
+            ? player.pendingDestinationCards.length + player.completedDestinationCards.length
+            : player.numberOfPendingDestinationCards + player.numberOfCompletedDestinationCards;
 
         const allDestinationCards = completedDestinationCards + pendingDestinationCards;
 

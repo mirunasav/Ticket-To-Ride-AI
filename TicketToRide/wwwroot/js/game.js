@@ -4,8 +4,10 @@ import { initializeCities } from "./city.js";
 import { computeGameOutcomeRequest } from "./computeGameOutcomeRequest.js";
 import { displayPlayerDestinationCards, emptyHoveredCityNames, hoveredCityNames } from "./destinationCards.js";
 import { GameState } from "./gameStates.js";
+import { getExistingGameRequest, getNewGameRequest } from "./getGameRequest.js";
 import { getGameStateRequest } from "./getGameStateRequest.js";
 import { getCityFromNumber, getCityIndexFromName, getGameStateFromNumber } from "./getObjectsFromEnum.js";
+import { makeBotMoveRequest } from "./makeBotMoveRequest.js";
 import { initDisplayPlayerStatistics } from "./playerStatistics.js";
 import { chooseTrainCardColor, displayFaceUpDeckImages, displayPlayerTrainCards, preloadTrainCardImages } from "./trainCardsDeck.js";
 import { emptyHtmlContainer } from "./utils.js";
@@ -25,6 +27,8 @@ export let claimedRoutes = [];
 export let gameInstance = {};
 
 export let playerIndex = getPlayerIndex();
+export let currentPlayer;
+
 let displayingGameResults = false;
 
 const playerStatsContainer = document.getElementById('all-player-stats-container');
@@ -61,7 +65,6 @@ async function preInitGame() {
     else {
         console.log(`error : ${result}`);
     }
-
 }
 
 async function addButtonEventListeners() {
@@ -107,16 +110,16 @@ function changeVisibilities(loadingNewGame) {
 }
 
 async function displayGame(exists = true, numberOfPlayers = 2) {
-    let url;
+    let response;
 
     if (exists) {
-        url = `http://localhost:5001/game?playerIndex=${playerIndex}`;
+        response = await getExistingGameRequest(playerIndex);
     }
     else {
-        url = `http://localhost:5001/game/newGame?numberOfPlayers=${numberOfPlayers}`;
+        let playerTypes = getPlayerTypesFromUrl();
+        let numberOfPlayers = getNumberOfPlayersFromUrl();
+        response = await getNewGameRequest(numberOfPlayers, playerTypes);
     }
-
-    var response = await fetch(url);
 
     if (response.ok) {
         let responseJson = await response.json();
@@ -159,19 +162,22 @@ function initGameVariables(game) {
         destinationCardsDeck.push(new DestinationCard(card.origin, card.destination, card.pointValue));
     }
 
+    console.log("game players:", game.players)
     for (const player of game.players) {
         players.push(new Player(
             player.name,
             player.points,
             player.remainingTrains,
             player.color,
+            player.playerIndex,
             player.pendingDestinationCards,
             player.hand,
             player.completedDestinationCards,
             player.numberOfTrainCards,
             player.numberOfPendingDestinationCards,
             player.numberOfCompletedDestinationCards,
-            player.claimedRoutes
+            player.claimedRoutes, 
+            player.isBot
         ));
     }
 
@@ -200,6 +206,8 @@ function initGameVariables(game) {
         routes: routes,
         claimedRoutes: claimedRoutes
     }
+
+    currentPlayer = players[playerIndex];
 
     printGame();
 }
@@ -251,6 +259,31 @@ function getPlayerIndex() {
     }
     else {
         return 0;
+    }
+}
+
+function getPlayerTypesFromUrl(){
+    const queryString = window.location.search;
+    const searchParams = new URLSearchParams(queryString);
+    const playerTypes = [];
+    searchParams.forEach((value, key) => {
+      if (key === 'playerType') {
+        playerTypes.push(value);
+      }
+    });
+
+    return playerTypes;
+}
+
+function getNumberOfPlayersFromUrl(){
+    const queryString = window.location.search;
+    const params = new URLSearchParams(queryString);
+    const playerIndex = params.get("numberOfPlayers");
+    if (playerIndex) {
+        return playerIndex;
+    }
+    else {
+        return 2;
     }
 }
 
@@ -392,6 +425,17 @@ export async function updateGameState() {
         if (oldGameState !== gameState || playerTurn !== oldPlayerTurn) {
             displayGame(true, numberOfPlayers)
         }
+
+        console.log(playerIndex)
+        console.log(playerTurn)
+        console.log(currentPlayer.isBot)
+        if(playerTurn == playerIndex && currentPlayer.isBot){
+            //get next move
+            
+            console.log(currentPlayer)
+            await makeBotMoveRequest(playerIndex);
+            updateGameState();
+        }
     }
     catch (error) {
         console.error(error)
@@ -452,13 +496,15 @@ function displayWinners(winners) {
             winner.points,
             winner.remainingTrains,
             winner.color,
+            winner.playerIndex,
             winner.pendingDestinationCards,
             winner.hand,
             winner.completedDestinationCards,
             winner.numberOfTrainCards,
             winner.numberOfPendingDestinationCards,
             winner.numberOfCompletedDestinationCards,
-            winner.claimedRoutes
+            winner.claimedRoutes,
+            winner.isBot
         ))
     }
 

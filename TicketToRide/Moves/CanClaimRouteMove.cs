@@ -34,7 +34,7 @@ namespace TicketToRide.Moves
             {
                 //check that the player can claim this route
                 var possibleColors = Game.Board.Routes
-                    .ColorsWithWhichRouteCanBeClaimed(route, Game.Players.ElementAt(playerIndex));
+                    .ColorsWithWhichRouteCanBeClaimed(route, Game.Players.ElementAt(PlayerIndex));
 
                 colorsWithWhichRoutesCanBeClaimed.AddRange(possibleColors);
             }

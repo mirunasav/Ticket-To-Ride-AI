@@ -17,7 +17,7 @@ export function initializeCities(){
     let LasVegas = new City(159,326,'LasVegas')
     let SaltLakeCity = new City(202, 247, 'SaltLakeCity')
     let Helena = new City(255, 158, 'Helena')
-    let Winipeg = new City(348, 70, 'Winipeg')
+    let Winipeg = new City(348, 70, 'Winnipeg')
     let Duluth = new City(433, 153, 'Duluth')
     let SantaFe = new City(294, 335, 'SantaFe')
     let Denver = new City(299, 270, 'Denver')

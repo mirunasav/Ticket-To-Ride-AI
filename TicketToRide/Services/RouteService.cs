@@ -22,7 +22,7 @@ namespace TicketToRide.Services
         {
             var game = gameProvider.GetGame();
 
-            var player = game.Players.ElementAt(claimRouteMove.playerIndex);
+            var player = game.Players.ElementAt(claimRouteMove.PlayerIndex);
 
             //vad daca ruta e claimed
             if (IsRouteClaimed(claimRouteMove.Route, numberOfPlayers))

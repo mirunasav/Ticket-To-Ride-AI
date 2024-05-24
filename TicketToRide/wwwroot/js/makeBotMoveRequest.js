@@ -1,7 +1,7 @@
 import { showMessage } from "./game.js";
 
-export async function getGameStateRequest() {
-    let url = `http://localhost:5001/game/GetGameState`;
+export async function makeBotMoveRequest(playerIndex) {
+    let url = `http://localhost:5001/game/MakeBotMove?playerIndex=${playerIndex}`;
 
     var response = await fetch(url, {
         method: 'GET',
@@ -12,6 +12,7 @@ export async function getGameStateRequest() {
 
     if (response.ok) {
         let responseJson = await response.json();
+        console.log(responseJson)
         return responseJson;
     }
     else {
@@ -21,4 +22,3 @@ export async function getGameStateRequest() {
         return;
     }
 }
-

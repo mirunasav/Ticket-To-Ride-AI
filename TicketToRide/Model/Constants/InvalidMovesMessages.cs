@@ -24,5 +24,7 @@ namespace TicketToRide.Model.Constants
         public const string NotEnoughDestinationCards = "There are not enough destination cards left";
 
         public const string GameNotEndedYet = "Cannot compute game outcome. Game not ended yet";
+
+        public const string PlayerNotBot = "This player is not a bot";
     }
 }

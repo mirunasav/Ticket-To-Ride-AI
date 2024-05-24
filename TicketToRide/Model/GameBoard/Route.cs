@@ -42,6 +42,20 @@ namespace TicketToRide.Model.GameBoard
             this.Color = TrainColor;
             this.Length = Length;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+                return false;
+
+            Route other = (Route)obj;
+            return Origin == other.Origin && Destination == other.Destination && Color == other.Color && Length == other.Length;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Origin, Destination, Color, Length);
+        }
     }
 
 }

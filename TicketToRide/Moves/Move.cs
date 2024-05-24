@@ -7,12 +7,12 @@ namespace TicketToRide.Moves
     {
         public Game Game { get; set; }
 
-        public int playerIndex { get; set; }
+        public int PlayerIndex { get; set; }
 
         public Move(Game game, int playerIndex)
         {
             this.Game = game;
-            this.playerIndex = playerIndex;
+            this.PlayerIndex = playerIndex;
         }
 
         public abstract MakeMoveResponse Execute();

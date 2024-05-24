@@ -27,7 +27,7 @@ namespace TicketToRide.Moves
             //update game state
             foreach(var chosenCard in ChosenDestinationCards)
             {
-                Game.GetPlayer(playerIndex).PendingDestinationCards.Add(chosenCard);
+                Game.GetPlayer(PlayerIndex).PendingDestinationCards.Add(chosenCard);
                 Game.Board.DestinationCards.Remove(chosenCard);
             }
 

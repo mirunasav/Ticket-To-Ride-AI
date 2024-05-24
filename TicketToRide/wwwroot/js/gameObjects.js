@@ -16,14 +16,15 @@ export class DestinationCard {
 }
 
 export class Player {
-    constructor(name, points, remainingTrains, color, pendingDestinationCards, hand, completedDestinationCards,
+    constructor(name, points, remainingTrains, color, playerIndex, pendingDestinationCards, hand, completedDestinationCards,
         numberOfTrainCards, numberOfPendingDestinationCards, numberOfCompletedDestinationCards,
-        claimedRoutes
+        claimedRoutes, isBot
     ) {
         this.name = name;
         this.points = points;
         this.remainingTrains = remainingTrains;
         this.color = getPlayerColorFromNumber(color);
+        this.playerIndex = playerIndex;
         this.pendingDestinationCards = initPlayerDestinationCards(pendingDestinationCards);
         this.completedDestinationCards = initPlayerDestinationCards(completedDestinationCards);
         this.hand = initPlayerHand(hand);
@@ -31,6 +32,7 @@ export class Player {
         this.numberOfPendingDestinationCards = numberOfPendingDestinationCards;
         this.numberOfCompletedDestinationCards = numberOfCompletedDestinationCards;
         this.claimedRoutes = new ClaimedRoutes(claimedRoutes.cities, claimedRoutes.edges);
+        this.isBot = isBot
     }
 }
 

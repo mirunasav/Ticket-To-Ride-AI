@@ -24,7 +24,7 @@ namespace TicketToRide.Moves
 
         public override MakeMoveResponse Execute()
         {
-            var player = Game.GetPlayer(playerIndex);
+            var player = Game.GetPlayer(PlayerIndex);
 
             var length = Route.ElementAt(0).Length;
             var pointValue = Route.ElementAt(0).PointValue;
@@ -61,7 +61,7 @@ namespace TicketToRide.Moves
             {
                 IsValid = true,
                 Message = ValidMovesMessages.PlayerHasClaimedRoute,
-                PlayerRemainingCards = Game.GetPlayer(playerIndex).Hand,
+                PlayerRemainingCards = Game.GetPlayer(PlayerIndex).Hand,
                 NewlyCompletedDestinations = newlyCompletedDestinations
             };
         }

@@ -11,6 +11,6 @@ namespace TicketToRide.Model.Players
             IsBot = true;
         }
 
-        public abstract Move GetNextMove(Game game);
+        public abstract Move GetNextMove(Game game, PossibleMovesDto possibleMoves);
     }
 }

@@ -31,7 +31,7 @@ namespace TicketToRide.Controllers
 
             var playerTypes = new List<PlayerType>();
 
-            if (newGameRequest.PlayerTypes != null)
+            if (newGameRequest.PlayerTypes != null && newGameRequest.PlayerTypes.Count > 0)
             {
                 if (newGameRequest.PlayerTypes.Count != newGameRequest.NumberOfPlayers)
                 {
@@ -308,6 +308,38 @@ namespace TicketToRide.Controllers
                 return BadRequest();
             }
         }
+
+
+        #region AI
+        [HttpGet]
+        public IActionResult MakeBotMove(int playerIndex)
+        {
+            var response = gameService.MakeBotMove(playerIndex);
+
+            if (!response.IsValid)
+            {
+                return BadRequest(response.Message);
+            }
+
+            return Json(response);
+        }
+
+        //not to be used from interface
+        [HttpGet]
+        public IActionResult GetAllPossibleMoves(int playerIndex)
+        {
+            var response = gameService.GetAllPossibleMoves(playerIndex);
+
+            return Ok(response);
+        }
+
+        [HttpGet]
+        public IActionResult GetAllPossibleClaimRouteMoves(int playerIndex)
+        {
+            var response = gameService.GetAllClaimRouteMoves(playerIndex);
+            return Json(response);
+        }
+        #endregion
 
         #region frontend
         [HttpGet]

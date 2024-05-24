@@ -1,5 +1,4 @@
-﻿using QuickGraph;
-using TicketToRide.Model.Cards;
+﻿using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
 using Route = TicketToRide.Model.GameBoard.Route;
