@@ -1,5 +1,5 @@
 import { PlayerColor } from "./GameObjects.js";
-import { getPlayerColorFromNumber } from "./getObjectsFromEnum.js";
+import { hasGameEnded } from "./game.js";
 import { emptyHtmlContainer } from "./utils.js";
 
 export function initDisplayPlayerStatistics(players, playerIndex) {
@@ -68,7 +68,7 @@ export function initDisplayPlayerStatistics(players, playerIndex) {
 
         const completedDestinationCards = player === currentPlayer
             ? player.completedDestinationCards.length
-            : '?';
+            : (hasGameEnded ? player.numberOfCompletedDestinationCards : '?');
 
         const pendingDestinationCards = player === currentPlayer
             ? player.pendingDestinationCards.length + player.completedDestinationCards.length

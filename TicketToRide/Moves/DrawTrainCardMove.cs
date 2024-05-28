@@ -9,26 +9,26 @@ namespace TicketToRide.Moves
     public class DrawTrainCardMove : Move
     {
         public int faceUpCardIndex { get; set; } = 0;
-        public DrawTrainCardMove(Game game, int playerIndex, int faceUpCardIndex) : base(game, playerIndex)
+        public DrawTrainCardMove(int playerIndex, int faceUpCardIndex) : base(playerIndex)
         {
             this.faceUpCardIndex = faceUpCardIndex;
         }
 
-        public override MakeMoveResponse Execute()
+        public override MakeMoveResponse Execute(Game game)
         {
             bool isTurnFinishedByLocomotiveDraw = false;
 
             if (faceUpCardIndex != -1)
             {
                 //draw from face up card
-                var card = Game.Board.FaceUpDeck.ElementAt(faceUpCardIndex);
-                Game.Board.FaceUpDeck.Remove(card);
+                var card = game.Board.FaceUpDeck.ElementAt(faceUpCardIndex);
+                game.Board.FaceUpDeck.Remove(card);
 
                 //add to player hand
-                Game.GetPlayer(PlayerIndex).Hand.Add(card);
+                game.GetPlayer(PlayerIndex).Hand.Add(card);
 
                 //refill faceup deck
-                Game.Board.PopulateFaceUpDeck();
+                game.Board.PopulateFaceUpDeck();
 
                 //if the drawn card was a locomotive, will change state to finished state
                 isTurnFinishedByLocomotiveDraw = card.Color == TrainColor.Locomotive;
@@ -38,25 +38,26 @@ namespace TicketToRide.Moves
             else
             {
                 //take first card from deck
-                var card = Game.Board.Deck.Pop(1);
+                var card = game.Board.Deck.Pop(1);
 
                 //add to player hand
-                Game.GetPlayer(PlayerIndex).Hand.AddRange(card);
+                game.GetPlayer(PlayerIndex).Hand.AddRange(card);
             }
 
-            var newGameState = UpdateGameState(isTurnFinished: isTurnFinishedByLocomotiveDraw);
+            var newGameState = UpdateGameState(game, isTurnFinished: isTurnFinishedByLocomotiveDraw);
 
             //if the player still has to draw cards
             //make the locomotives unavailable
             if(newGameState == GameState.DrawingTrainCards)
             {
-                Game.Board.ChangeFaceUpLocomotiveStatus(isAvailable: false);
+                game.Board.ChangeFaceUpLocomotiveStatus(isAvailable: false);
             }
 
             //if the player's turn has finished, change status of locomotives to available
             else if (newGameState == GameState.WaitingForPlayerMove)
             {
-                Game.Board.ChangeFaceUpLocomotiveStatus(isAvailable: true);
+                game.Board.ChangeFaceUpLocomotiveStatus(isAvailable: true);
+                game.UpdateStateNextPlayerTurn();
             }
 
             return new MakeMoveResponse
@@ -66,25 +67,23 @@ namespace TicketToRide.Moves
             };
         }
 
-        private GameState UpdateGameState(bool isTurnFinished = false)
+        private GameState UpdateGameState(Game game, bool isTurnFinished = false)
         {
             //drawn a locomotive card, OR
             //already drawn one card, so after this one, the player's turn will end
 
-            if (isTurnFinished || Game.GameState == GameState.DrawingTrainCards)
+            if (isTurnFinished || game.GameState == GameState.DrawingTrainCards)
             {
-                Game.UpdateStateNextPlayerTurn();
-
-                return Game.GameState;
+                return GameState.WaitingForPlayerMove;
             }
 
             //the first card from this player's drawing cards turn
-            else if (Game.GameState == GameState.WaitingForPlayerMove)
+            else if (game.GameState == GameState.WaitingForPlayerMove)
             {
-                Game.GameState = GameState.DrawingTrainCards;
+                game.GameState = GameState.DrawingTrainCards;
             }
 
-            return Game.GameState;
+            return game.GameState;
         }
     }
 }

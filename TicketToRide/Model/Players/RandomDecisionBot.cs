@@ -9,28 +9,16 @@ namespace TicketToRide.Model.Players
         public RandomDecisionBot(string name, PlayerColor color, int index) : base(name, color, index)
         {
         }
-        //ca parametru : o lista de possible moves din care sa aleaga
-        public override Move GetNextMove(Game game, PossibleMovesDto possibleMoves)
+
+        public override Move GetNextMove(Game game, PossibleMoves possibleMoves)
         {
-            //get all possible moves
-            //choose a random one
-            //return it
-            //Random random = new Random();
-            //int randomIndex = random.Next(1, 4);
+            //pot lua cu o pondere: adaug destination card move de 1/20 ori ca sa nu fie 1/200
+            var allMoves = possibleMoves.GetAllPossibleMoves();
 
-            //switch (randomIndex)
-            //{
-            //    case 1: // draw train card moves
-            //        if(possibleMoves.DrawTrainCardMoves.Count > 0)
-            //        {
-            //            var randomTrainCardIndex = random.Next(0, possibleMoves.DrawTrainCardMoves.Count);
-            //            return possibleMoves.DrawTrainCardMoves[randomTrainCardIndex];
+            Random random = new Random();
+            int randomIndex = random.Next(0, allMoves.Count);
 
-            //        }
-
-
-            //}
-            return new DrawTrainCardMove(game, this.PlayerIndex, -1); // always get cards from normal deck
+            return allMoves[randomIndex];
         }
     }
 }

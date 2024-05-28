@@ -1,5 +1,5 @@
-export async function computeGameOutcomeRequest() {
-    let url = `http://localhost:5001/game/ComputeGameOutcome`;
+export async function getGameOutcomeRequest() {
+    let url = `http://localhost:5001/game/GetGameOutcome`;
 
     var response = await fetch(url, {
         method: 'GET',

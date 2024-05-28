@@ -1,15 +1,16 @@
 import { DestinationCard, TrainCard, Player, Route } from "./GameObjects.js";
 import { drawBoard, preloadBoard, setupBoard } from "./board.js";
 import { initializeCities } from "./city.js";
-import { computeGameOutcomeRequest } from "./computeGameOutcomeRequest.js";
+import { getGameOutcomeRequest } from "./computeGameOutcomeRequest.js";
+import { openCreateNewGameSweetAlert } from "./createGameSweetAlert.js";
 import { displayPlayerDestinationCards, emptyHoveredCityNames, hoveredCityNames } from "./destinationCards.js";
 import { GameState } from "./gameStates.js";
 import { getExistingGameRequest, getNewGameRequest } from "./getGameRequest.js";
 import { getGameStateRequest } from "./getGameStateRequest.js";
-import { getCityFromNumber, getCityIndexFromName, getGameStateFromNumber } from "./getObjectsFromEnum.js";
+import { getCityFromNumber, getGameStateFromNumber } from "./getObjectsFromEnum.js";
 import { makeBotMoveRequest } from "./makeBotMoveRequest.js";
 import { initDisplayPlayerStatistics } from "./playerStatistics.js";
-import { chooseTrainCardColor, displayFaceUpDeckImages, displayPlayerTrainCards, preloadTrainCardImages } from "./trainCardsDeck.js";
+import { displayFaceUpDeckImages, displayPlayerTrainCards, preloadTrainCardImages } from "./trainCardsDeck.js";
 import { emptyHtmlContainer } from "./utils.js";
 
 export let playerTurn;
@@ -29,20 +30,22 @@ export let gameInstance = {};
 export let playerIndex = getPlayerIndex();
 export let currentPlayer;
 
-let displayingGameResults = false;
+export let hasGameEnded = false;
 
-const playerStatsContainer = document.getElementById('all-player-stats-container');
-const messagesContainer = document.getElementById('messages-container');
-const createGameButton = document.getElementById("createGameButton");
-const createGameButtonContainer = document.getElementById('init-game-button-container');
+let displayingGameResults = false;
+let hasMadeRequest = false;
+
+let numberOfPlayers;
+let playerTypes = [];
+
 const newGameButton = document.getElementById('newGameButton');
 const drawDestinationCardsButton = document.getElementById('drawDestinationCardsButton');
 const chooseDestinationsButton = document.getElementById('chooseDestinationsButton');
+const mainContainer = document.getElementById('main-container');
 
 addButtonEventListeners();
 preInitGame();
 
-setInterval(updateGameState, 3000);
 
 async function preInitGame() {
     let isGameLoaded = false;
@@ -60,6 +63,14 @@ async function preInitGame() {
         else {
             //make request to get new game
             changeVisibilities(true);
+            //open swal
+
+            const result = await openCreateNewGameSweetAlert();
+            if (result) {
+                numberOfPlayers = result.numberOfPlayers;
+                playerTypes = result.playerTypes;
+            }
+            displayGame(false)
         }
     }
     else {
@@ -68,11 +79,6 @@ async function preInitGame() {
 }
 
 async function addButtonEventListeners() {
-    createGameButton.addEventListener("click", async function () {
-        const numberOfPlayers = document.getElementById("numberOfPlayers").value;
-        await displayGame(false, numberOfPlayers);
-    });
-
     newGameButton.addEventListener("click", async function () {
         //make request to delete game
         await deleteGameRequest();
@@ -103,21 +109,16 @@ function changeVisibilities(loadingNewGame) {
     //and new game button
     hideMessage();//hide error messages
     hideMessage(false); // hide information messages
-    playerStatsContainer.style.display = loadingNewGame == true ? 'none' : 'inline';
-    createGameButtonContainer.style.display = loadingNewGame == true ? 'inline' : 'none';
-    newGameButton.style.display = loadingNewGame == true ? 'none' : 'flex';
-    messagesContainer.style.display = loadingNewGame == true ? 'none' : 'flex';
+    mainContainer.style.display = loadingNewGame == true ? 'none' : 'flex';
 }
 
-async function displayGame(exists = true, numberOfPlayers = 2) {
+async function displayGame(exists = true) {
     let response;
 
     if (exists) {
         response = await getExistingGameRequest(playerIndex);
     }
     else {
-        let playerTypes = getPlayerTypesFromUrl();
-        let numberOfPlayers = getNumberOfPlayersFromUrl();
         response = await getNewGameRequest(numberOfPlayers, playerTypes);
     }
 
@@ -131,6 +132,7 @@ async function displayGame(exists = true, numberOfPlayers = 2) {
         initPlayerDestinationCards(playerIndex);
         initPlayerStatistics(playerIndex);
         initMessagesContainer(playerTurn, playerIndex);
+        setInterval(updateGameState, 2000);
         if (!exists) {
             changeVisibilities(false)
         }
@@ -176,7 +178,7 @@ function initGameVariables(game) {
             player.numberOfTrainCards,
             player.numberOfPendingDestinationCards,
             player.numberOfCompletedDestinationCards,
-            player.claimedRoutes, 
+            player.claimedRoutes,
             player.isBot
         ));
     }
@@ -193,10 +195,12 @@ function initGameVariables(game) {
     }
 
     claimedRoutes = routes.filter(route => route.isClaimed);
-    console.log(claimedRoutes)
+
+    hasGameEnded = gameState == GameState.Ended;
+
     gameInstance = {
         playerTurn: playerTurn,
-        gameState: getGameStateFromNumber(game.gameState),
+        gameState: gameState,
         players: players,
         trainCardsDeck: trainCardsDeck,
         destinationCardsDeck: destinationCardsDeck,
@@ -204,7 +208,8 @@ function initGameVariables(game) {
         faceUpDeck: faceUpDeck,
         cities: cities,
         routes: routes,
-        claimedRoutes: claimedRoutes
+        claimedRoutes: claimedRoutes,
+        hasGameEnded: hasGameEnded
     }
 
     currentPlayer = players[playerIndex];
@@ -232,6 +237,14 @@ function initPlayerStatistics(playerIndex) {
 export function initMessagesContainer(playerTurn, playerIndex) {
     var playerTurnContainer = document.getElementById('messages-container__player-turn-message');
     var playerWaitingContainer = document.getElementById('messages-container__waiting-message');
+    var gameEndedContainer = document.getElementById('messages-container__game-ended-message');
+    console.log("in messages container", hasGameEnded)
+    if (hasGameEnded) {
+        gameEndedContainer.style.display = 'inline';
+        playerTurnContainer.style.display = 'none';
+        playerWaitingContainer.style.display = 'none';
+        return;
+    }
 
     if (playerTurn != playerIndex) {
         playerTurnContainer.style.display = 'none';
@@ -262,20 +275,20 @@ function getPlayerIndex() {
     }
 }
 
-function getPlayerTypesFromUrl(){
+function getPlayerTypesFromUrl() {
     const queryString = window.location.search;
     const searchParams = new URLSearchParams(queryString);
     const playerTypes = [];
     searchParams.forEach((value, key) => {
-      if (key === 'playerType') {
-        playerTypes.push(value);
-      }
+        if (key === 'playerType') {
+            playerTypes.push(value);
+        }
     });
 
     return playerTypes;
 }
 
-function getNumberOfPlayersFromUrl(){
+function getNumberOfPlayersFromUrl() {
     const queryString = window.location.search;
     const params = new URLSearchParams(queryString);
     const playerIndex = params.get("numberOfPlayers");
@@ -411,30 +424,40 @@ function checkCheckboxes() {
 
 export async function updateGameState() {
     try {
-        let updatedGameState = await getGameStateRequest();
-        let oldGameState = gameState;
-        let oldPlayerTurn = playerTurn;
+        if (!hasGameEnded) {
+            let updatedGameState = await getGameStateRequest();
+            let oldGameState = gameState;
+            let oldPlayerTurn = playerTurn;
 
-        playerTurn = updatedGameState.playerTurn;
-        gameState = getGameStateFromNumber(updatedGameState.gameState);
-        if (gameState == GameState.Ended && displayingGameResults == false) {
-            //make request to add up final points and show pop up with finished result and winner
-            let gameOutcome = await computeGameOutcomeRequest();
-            displayWinners(gameOutcome.winners);
-        }
-        if (oldGameState !== gameState || playerTurn !== oldPlayerTurn) {
-            displayGame(true, numberOfPlayers)
-        }
+            playerTurn = updatedGameState.playerTurn;
+            gameState = getGameStateFromNumber(updatedGameState.gameState);
+            hasGameEnded = gameState == GameState.Ended;
+            console.log("playerTurn", playerTurn)
+            console.log("playerIndex", playerIndex)
+            console.log("hasGameEnded", hasGameEnded)
 
-        console.log(playerIndex)
-        console.log(playerTurn)
-        console.log(currentPlayer.isBot)
-        if(playerTurn == playerIndex && currentPlayer.isBot){
-            //get next move
-            
-            console.log(currentPlayer)
-            await makeBotMoveRequest(playerIndex);
-            updateGameState();
+
+            if (playerTurn == playerIndex
+                && currentPlayer.isBot
+                && hasMadeRequest == false) {
+                //get next move if the game is not ended and it's the bot's turn
+                hasMadeRequest = true;
+                await makeBotMoveRequest(playerIndex);
+                hasMadeRequest = false;
+                updateGameState();
+            }
+
+            if (oldGameState !== gameState || playerTurn !== oldPlayerTurn) {
+                displayGame(true, numberOfPlayers)
+            }
+        }
+        else {
+            console.log("displayingGameResults", displayingGameResults)
+            if ( displayingGameResults == false) {
+                let gameOutcome = await getGameOutcomeRequest();
+                console.log('game outcome', gameOutcome);
+                displayWinners(gameOutcome);
+            }
         }
     }
     catch (error) {
@@ -476,15 +499,19 @@ export function hideMessage(isError = true, container = null, span = null) {
             container = document.getElementById('messages-container__information-message');
         }
     }
-    console.log(container)
+
     var messageSpan = span == null ? container.querySelector('span') : span;
 
     messageSpan.innerHTML = '';
     container.style.display = "none";
 }
 
-function displayWinners(winners) {
+function displayWinners(gameOutcome) {
+    let winners = gameOutcome.winners;
+    let players = gameOutcome.players;
+    console.log(gameOutcome);
     displayingGameResults = true;
+
     const currentPlayer = players[playerIndex];
     let winnerPlayers = [];
     let message = '';
@@ -532,11 +559,13 @@ function displayWinners(winners) {
     }
 
     let htmlContent = '<div>';
-    htmlContent +=`<div>${message}</div>`
+    htmlContent += `<div>${message}</div>`
     // Concatenate player names and points
     players.forEach((player) => {
         htmlContent += `<div>${player.name} : ${player.points} p</div>`;
     });
+
+    htmlContent += `<div>${players[gameOutcome.longestContPathPlayerIndex].name} has the longest path : ${gameOutcome.longestContPathLength} trains </div>`;
 
     htmlContent += '</div>';
 
@@ -546,7 +575,7 @@ function displayWinners(winners) {
         html: htmlContent,
     }).then((result) => {
         if (result.isConfirmed) {
-            displayingGameResults = false;
+            displayingGameResults = true;
             document.getElementById("player-points").textContent = playerPoints;
         }
     });

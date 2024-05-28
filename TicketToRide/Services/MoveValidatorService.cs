@@ -21,10 +21,12 @@ namespace TicketToRide.Services
 
         public MakeMoveResponse ValidateDrawTrainCardMove(DrawTrainCardMove drawTrainCardMove)
         {
+            var game = gameProvider.GetGame();
+
             if ((drawTrainCardMove.faceUpCardIndex < 0 && drawTrainCardMove.faceUpCardIndex != -1) ||
-               drawTrainCardMove.faceUpCardIndex >= drawTrainCardMove.Game.Board.FaceUpDeck.Count
+               drawTrainCardMove.faceUpCardIndex >= game.Board.FaceUpDeck.Count
                || (drawTrainCardMove.faceUpCardIndex != -1
-               && !drawTrainCardMove.Game.Board.FaceUpDeck.ElementAt(drawTrainCardMove.faceUpCardIndex).IsAvailable))
+               && !game.Board.FaceUpDeck.ElementAt(drawTrainCardMove.faceUpCardIndex).IsAvailable))
             {
                 return new MakeMoveResponse
                 {
@@ -33,9 +35,7 @@ namespace TicketToRide.Services
                 };
             }
 
-            if (drawTrainCardMove.Game.Board.Deck.Count == 0
-                && drawTrainCardMove.Game.Board.FaceUpDeck.Count == 0
-                && drawTrainCardMove.Game.Board.DiscardPile.Count == 0)
+            if (game.Board.Deck.Where(c => c.IsAvailable).Count() + game.Board.DiscardPile.Count < 2)
             {
                 return new MakeMoveResponse
                 {
@@ -85,7 +85,10 @@ namespace TicketToRide.Services
         public MakeMoveResponse CanRouteBeClaimed(CanClaimRouteMove canClaimRouteMove)
         {
             //check that the route exists and is not occupied
-            canClaimRouteMove.Route = routeService.GetRoute(canClaimRouteMove.Origin, canClaimRouteMove.Destination);
+            if(canClaimRouteMove.Route is null || canClaimRouteMove.Route.Count == 0)
+            {
+                canClaimRouteMove.Route = routeService.GetRoute(canClaimRouteMove.Origin, canClaimRouteMove.Destination);
+            }
 
             if (canClaimRouteMove.Route is null || canClaimRouteMove.Route.Count == 0)
             {
@@ -120,7 +123,9 @@ namespace TicketToRide.Services
 
         public MakeMoveResponse ValidateDrawDestinationCardsMove(DrawDestinationCardMove drawDestinationCardsMove)
         {
-            var canDrawCards = drawDestinationCardsMove.Game.Board.DestinationCards.Count >= 3;
+            var game = gameProvider.GetGame();
+
+            var canDrawCards = game.Board.DestinationCards.Count >= 3;
 
             if (!canDrawCards)
             {

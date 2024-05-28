@@ -204,8 +204,19 @@ namespace TicketToRide.Model.GameBoard
         {
             while (FaceUpDeck.Count < 5)
             {
-                var newCard = Deck.Pop(1);
-                FaceUpDeck.AddRange(newCard);
+                if (Deck.Count > 0)
+                {
+                    var newCard = Deck.Pop(1);
+                    if(newCard != null)
+                    {
+                        FaceUpDeck.AddRange(newCard);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+
             }
         }
 
@@ -228,6 +239,11 @@ namespace TicketToRide.Model.GameBoard
                 DiscardPile.AddRange(FaceUpDeck);
                 FaceUpDeck.Clear();
 
+                if (Deck.Count < 5)
+                {
+                    RefillDeck();
+                }
+
                 RefillFaceUpDeck();
                 locomotiveCount = FaceUpDeck.Where(c => c.Color == TrainColor.Locomotive).Count();
             }
@@ -235,7 +251,7 @@ namespace TicketToRide.Model.GameBoard
 
         public void ChangeFaceUpLocomotiveStatus(bool isAvailable)
         {
-            foreach(var card in FaceUpDeck)
+            foreach (var card in FaceUpDeck)
             {
                 if (card.Color == TrainColor.Locomotive)
                 {
@@ -247,13 +263,16 @@ namespace TicketToRide.Model.GameBoard
         //when there are no more cards to be drawn, refill the deck
         private void RefillDeck()
         {
-            var cards = DiscardPile;
-            cards.AddRange(Deck.Pop(Deck.Count));
+            if (DiscardPile.Count > 0)
+            {
+                var cards = DiscardPile;
+                cards.AddRange(Deck);
 
-            cards.Shuffle();
+                cards.Shuffle();
 
-            Deck = cards;
-            DiscardPile.Clear();
+                Deck = cards;
+                DiscardPile.Clear();
+            }
         }
 
         #endregion

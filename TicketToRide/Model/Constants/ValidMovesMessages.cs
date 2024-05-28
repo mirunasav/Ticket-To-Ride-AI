@@ -11,6 +11,8 @@
 
         public const string PlayerHasDrawnDestinationCards = "The player has drawn destination cards and has to keep at least one.";
         public const string PlayerHasChosenDestinationCards = "The player has chosen which destination cards to keep.";
+
+        public const string GameHasEndedNoMovesLeft = "The game has because a player has no possible moves left.";
        
         public const string ValidMove = "Move is valid";
 

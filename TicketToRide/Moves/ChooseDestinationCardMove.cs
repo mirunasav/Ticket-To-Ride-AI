@@ -11,24 +11,23 @@ namespace TicketToRide.Moves
         public List<DestinationCard> NotChosenDestinationCards { get; set; }
 
         public ChooseDestinationCardMove(
-            Game game,
             int playerIndex,
             List<DestinationCard> chosenDestinationCards,
             List<DestinationCard> notChosenDestinationCards)
-            : base(game, playerIndex)
+            : base(playerIndex)
         {
             ChosenDestinationCards = chosenDestinationCards;
             NotChosenDestinationCards = notChosenDestinationCards;
         }
 
-        public override MakeMoveResponse Execute()
+        public override MakeMoveResponse Execute(Game game)
         {
             //get the ones marked as waiting to be chosen 
             //update game state
             foreach(var chosenCard in ChosenDestinationCards)
             {
-                Game.GetPlayer(PlayerIndex).PendingDestinationCards.Add(chosenCard);
-                Game.Board.DestinationCards.Remove(chosenCard);
+                game.GetPlayer(PlayerIndex).PendingDestinationCards.Add(chosenCard);
+                game.Board.DestinationCards.Remove(chosenCard);
             }
 
             foreach (var notChosen in NotChosenDestinationCards)
@@ -36,7 +35,7 @@ namespace TicketToRide.Moves
                 notChosen.IsWaitingToBeChosen = false;
             }
 
-            Game.UpdateStateNextPlayerTurn();
+            game.UpdateStateNextPlayerTurn();
 
             return new MakeMoveResponse
             {

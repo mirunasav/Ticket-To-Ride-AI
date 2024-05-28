@@ -7,24 +7,34 @@ namespace TicketToRide.Moves
 {
     public class ClaimRouteMove : Move
     {
-        public IList<Model.GameBoard.Route> Route {  get; set; }
+        public IList<Model.GameBoard.Route> Route { get; set; } = new List<Model.GameBoard.Route>();
 
-        public TrainColor ColorUsed {  get; set; }
+        public TrainColor ColorUsed { get; set; }
 
-        public City Origin {  get; set; }
+        public City Origin { get; set; }
 
         public City Destination { get; set; }
-        public ClaimRouteMove(Game game, int playerIndex, TrainColor colorUsed, City origin, City destination)
-            : base(game, playerIndex)
+        public ClaimRouteMove(int playerIndex, TrainColor colorUsed, City origin, City destination)
+            : base(playerIndex)
         {
             this.ColorUsed = colorUsed;
             this.Origin = origin;
             this.Destination = destination;
         }
 
-        public override MakeMoveResponse Execute()
+        public ClaimRouteMove(int playerIndex, TrainColor colorUsed, Model.GameBoard.Route route)
+    : base(playerIndex)
         {
-            var player = Game.GetPlayer(PlayerIndex);
+            this.ColorUsed = colorUsed;
+            this.Origin = route.Origin;
+            this.Destination = route.Destination;
+            Route.Add(route);
+        }
+
+
+        public override MakeMoveResponse Execute(Game game)
+        {
+            var player = game.GetPlayer(PlayerIndex);
 
             var length = Route.ElementAt(0).Length;
             var pointValue = Route.ElementAt(0).PointValue;
@@ -48,20 +58,24 @@ namespace TicketToRide.Moves
             player.Points += pointValue;
 
             //mark route as claimed
-            Game.MarkRouteAsClaimed(Route.ElementAt(0).Origin, Route.ElementAt(0).Destination, player, ColorUsed);
+            game.MarkRouteAsClaimed(Route.ElementAt(0).Origin, Route.ElementAt(0).Destination, player, ColorUsed);
 
-            player.AddCompletedRoute(Route.ElementAt(0));
+            player.AddCompletedRoute(Route.Where(r =>
+            r.Color == ColorUsed
+            || r.Color == TrainColor.Grey
+            || ColorUsed == TrainColor.Locomotive)
+                .First());
 
             var newlyCompletedDestinations = player.GetNewlyCompletedDestinations();
 
             //change gameState
-            Game.UpdateStateNextPlayerTurn();
+            game.UpdateStateNextPlayerTurn();
 
             return new ClaimRouteResponse
             {
                 IsValid = true,
                 Message = ValidMovesMessages.PlayerHasClaimedRoute,
-                PlayerRemainingCards = Game.GetPlayer(PlayerIndex).Hand,
+                PlayerRemainingCards = game.GetPlayer(PlayerIndex).Hand,
                 NewlyCompletedDestinations = newlyCompletedDestinations
             };
         }

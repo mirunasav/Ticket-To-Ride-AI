@@ -60,6 +60,52 @@ namespace TicketToRide.Model.GameBoard
 
             return false;
         }
+
+        public (int, List<Edge>) LongestContinuousPath()
+        {
+            int longestPathLength = 0;
+            List<Edge> longestPathEdges = new List<Edge>();
+
+            foreach (var city in Cities)
+            {
+                var visitedEdges = new HashSet<Edge>();
+                var currentPathEdges = new List<Edge>();
+                var (pathLength, pathEdges) = DFS(city, visitedEdges, 0, currentPathEdges);
+
+                if (pathLength > longestPathLength)
+                {
+                    longestPathLength = pathLength;
+                    longestPathEdges = pathEdges;
+                }
+            }
+
+            return (longestPathLength, longestPathEdges);
+        }
+
+        private (int, List<Edge>) DFS(City currentCity, HashSet<Edge> visitedEdges, int currentLength, List<Edge> currentPathEdges)
+        {
+            int maxLength = currentLength;
+            List<Edge> maxPathEdges = new List<Edge>(currentPathEdges);
+
+            foreach (var edge in Edges.Where(e => (e.Origin == currentCity || e.Destination == currentCity) && !visitedEdges.Contains(e)))
+            {
+                visitedEdges.Add(edge);
+                currentPathEdges.Add(edge);
+                var nextCity = edge.Origin == currentCity ? edge.Destination : edge.Origin;
+                var (pathLength, pathEdges) = DFS(nextCity, visitedEdges, currentLength + edge.Cost, currentPathEdges);
+
+                if (pathLength > maxLength)
+                {
+                    maxLength = pathLength;
+                    maxPathEdges = new List<Edge>(pathEdges);
+                }
+
+                currentPathEdges.Remove(edge);
+                visitedEdges.Remove(edge);
+            }
+
+            return (maxLength, maxPathEdges);
+        }
     }
     public class Edge
     {

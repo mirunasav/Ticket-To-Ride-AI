@@ -13,28 +13,30 @@ namespace TicketToRide.Moves
 
         public IList<Model.GameBoard.Route> Route { get; set; }
 
-        public CanClaimRouteMove(Game game, int playerIndex, City origin, City destination)
-            : base(game, playerIndex)
+        public CanClaimRouteMove(int playerIndex, City origin, City destination)
+            : base(playerIndex)
         {
             this.Origin = origin;
             this.Destination = destination;
         }
 
-        public override MakeMoveResponse Execute()
+        public CanClaimRouteMove(int playerIndex, Model.GameBoard.Route route)
+             : base(playerIndex)
         {
-            //change game state
-            //if (Game.GameState == GameState.WaitingForPlayerMove)
-            //{
-            //    Game.GameState = GameState.DecidingAction;
-            //}
+            this.Origin = route.Origin;
+            this.Destination = route.Destination;
+            Route = new List<Model.GameBoard.Route> { route };
+        }
 
+        public override MakeMoveResponse Execute(Game game)
+        {
             var colorsWithWhichRoutesCanBeClaimed = new List<TrainColor>();
 
             foreach (var route in Route)
             {
                 //check that the player can claim this route
-                var possibleColors = Game.Board.Routes
-                    .ColorsWithWhichRouteCanBeClaimed(route, Game.Players.ElementAt(PlayerIndex));
+                var possibleColors = game.Board.Routes
+                    .ColorsWithWhichRouteCanBeClaimed(route, game.Players.ElementAt(PlayerIndex));
 
                 colorsWithWhichRoutesCanBeClaimed.AddRange(possibleColors);
             }

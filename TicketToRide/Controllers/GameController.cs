@@ -286,9 +286,9 @@ namespace TicketToRide.Controllers
         }
 
         [HttpGet]
-        public IActionResult ComputeGameOutcome()
+        public IActionResult GetGameOutcome()
         {
-            var response = gameService.ComputeGameOutcome();
+            var response = gameService.GetGameOutcome();
 
             if (!response.IsValid)
             {
@@ -300,7 +300,10 @@ namespace TicketToRide.Controllers
                 return Json(new
                 {
                     Message = getGameWinnerResponse.Message,
-                    Winners = getGameWinnerResponse.Winners
+                    Winners = getGameWinnerResponse.Winners,
+                    Players = getGameWinnerResponse.Players,
+                    LongestContPathLength = getGameWinnerResponse.LongestContPathLength,
+                    LongestContPathPlayerIndex = getGameWinnerResponse.LongestContPathPlayerIndex
                 });
             }
             else

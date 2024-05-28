@@ -16,7 +16,9 @@ namespace TicketToRide.Model.GameBoard
 
         public bool IsFinalTurn { get; set; } = false;
 
-        public bool IsOutcomeComputed { get; set; } = false;
+        public int LongestContPathLength { get; set; }
+
+        public int LongestContPathPlayerIndex {  get; set; }
 
         public Game(Board board, IList<Player> players)
         {
@@ -60,9 +62,10 @@ namespace TicketToRide.Model.GameBoard
         public void UpdateStateNextPlayerTurn()
         {
             // if the last player had his turn and it was the final turn, finish game
-            if(PlayerTurn == Players.Count - 1 && IsFinalTurn)
+            //or if the turn ended because of other reasons
+            if (PlayerTurn == Players.Count - 1 && IsFinalTurn)
             {
-                GameState = GameState.Ended;
+                EndGame();
                 return;
             }
 
@@ -91,6 +94,16 @@ namespace TicketToRide.Model.GameBoard
                 foundRoute.IsClaimed = true;
                 foundRoute.ClaimedBy = player.Color;
         }
+
+        public void EndGame()
+        {
+            if(GameState != GameState.Ended)
+            {
+                ComputeFinalPoints();
+                GameState = GameState.Ended;
+            }
+        }
+
         #region private
         private void ChangePlayerTurn()
         {
@@ -113,6 +126,37 @@ namespace TicketToRide.Model.GameBoard
                     return;
                 }
             }
+        }
+        private void ComputeFinalPoints()
+        {
+            int longestContPathLength = 0;
+            int longestContPathPlayerIndex = 0;
+
+            foreach (var player in Players)
+            {
+                //add route points
+                foreach (var completedDestination in player.CompletedDestinationCards)
+                {
+                    player.Points += completedDestination.PointValue;
+                }
+
+                foreach (var pendingDestination in player.PendingDestinationCards)
+                {
+                    player.Points -= pendingDestination.PointValue;
+                }
+
+                var longestContPath = player.ClaimedRoutes.LongestContinuousPath();
+                if(longestContPath.Item1 > longestContPathLength)
+                {
+                    longestContPathLength = longestContPath.Item1;
+                    longestContPathPlayerIndex = player.PlayerIndex;
+                }
+            }
+
+            //add longest cont path bonus
+            Players[longestContPathPlayerIndex].Points += 10;
+            LongestContPathLength = longestContPathLength;
+            LongestContPathPlayerIndex = longestContPathPlayerIndex;
         }
 
         private ValidateActionMessage ValidateDrawTrainCardAction(int playerIndex)

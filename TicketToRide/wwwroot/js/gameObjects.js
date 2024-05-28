@@ -32,7 +32,7 @@ export class Player {
         this.numberOfPendingDestinationCards = numberOfPendingDestinationCards;
         this.numberOfCompletedDestinationCards = numberOfCompletedDestinationCards;
         this.claimedRoutes = new ClaimedRoutes(claimedRoutes.cities, claimedRoutes.edges);
-        this.isBot = isBot
+        this.isBot = isBot;
     }
 }
 

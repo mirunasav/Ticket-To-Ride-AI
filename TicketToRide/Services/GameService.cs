@@ -1,12 +1,13 @@
-﻿using TicketToRide.Controllers.Requests;
+﻿using System.Collections.Generic;
+using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
+using TicketToRide.Helpers;
 using TicketToRide.Model.Cards;
 using TicketToRide.Model.Constants;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
 using TicketToRide.Model.Players;
 using TicketToRide.Moves;
-using TicketToRide.Moves.Dtos;
 
 
 namespace TicketToRide.Services
@@ -63,7 +64,7 @@ namespace TicketToRide.Services
 
         public MakeMoveResponse DrawTrainCard(int playerIndex, int faceUpCardIndex)
         {
-            var drawTrainCardMove = new DrawTrainCardMove(game, playerIndex, faceUpCardIndex);
+            var drawTrainCardMove = new DrawTrainCardMove(playerIndex, faceUpCardIndex);
 
             var canMakeMoveMessage = CanMakeMove(drawTrainCardMove);
 
@@ -82,14 +83,14 @@ namespace TicketToRide.Services
                 return validateMove;
             }
 
-            var response = drawTrainCardMove.Execute();
+            var response = drawTrainCardMove.Execute(game);
 
             return response;
         }
 
         public MakeMoveResponse CanClaimRoute(CanClaimRouteRequest request)
         {
-            var canClaimRouteMove = new CanClaimRouteMove(game, request.PlayerIndex, request.Origin, request.Destination);
+            var canClaimRouteMove = new CanClaimRouteMove(request.PlayerIndex, request.Origin, request.Destination);
 
             var canMakeMoveMessage = CanMakeMove(canClaimRouteMove);
 
@@ -108,13 +109,13 @@ namespace TicketToRide.Services
                 return validateMove;
             }
 
-            var response = canClaimRouteMove.Execute();
+            var response = canClaimRouteMove.Execute(game);
             return response;
         }
 
         public MakeMoveResponse ClaimRoute(int playerIndex, City origin, City destination, TrainColor colorUsed)
         {
-            var claimRouteMove = new ClaimRouteMove(game, playerIndex, colorUsed, origin, destination);
+            var claimRouteMove = new ClaimRouteMove(playerIndex, colorUsed, origin, destination);
 
             var canMakeMoveMessage = CanMakeMove(claimRouteMove);
 
@@ -134,13 +135,13 @@ namespace TicketToRide.Services
                 return validateMove;
             }
 
-            var response = claimRouteMove.Execute();
+            var response = claimRouteMove.Execute(game);
             return response;
         }
 
         public MakeMoveResponse DrawDestinationCards(int playerIndex)
         {
-            var drawDestinationCardMove = new DrawDestinationCardMove(game, playerIndex);
+            var drawDestinationCardMove = new DrawDestinationCardMove(playerIndex);
 
             var canMakeMoveMessage = CanMakeMove(drawDestinationCardMove);
 
@@ -159,7 +160,7 @@ namespace TicketToRide.Services
                 return validateMove;
             }
 
-            var response = drawDestinationCardMove.Execute();
+            var response = drawDestinationCardMove.Execute(game);
             return response;
         }
 
@@ -204,7 +205,6 @@ namespace TicketToRide.Services
             }
 
             var chooseDestinationCardMove = new ChooseDestinationCardMove(
-                game,
                 drawDestinationCardsRequest.PlayerIndex,
                 chosenDestinations,
                 notChosenDestinations);
@@ -226,11 +226,11 @@ namespace TicketToRide.Services
                 return validateMove;
             }
 
-            var response = chooseDestinationCardMove.Execute();
+            var response = chooseDestinationCardMove.Execute(game);
             return response;
         }
 
-        public MakeMoveResponse ComputeGameOutcome()
+        public MakeMoveResponse GetGameOutcome()
         {
             if (game.GameState != GameState.Ended)
             {
@@ -241,40 +241,20 @@ namespace TicketToRide.Services
                 };
             }
 
-            if (!game.IsOutcomeComputed)
-            {
-                ComputeFinalPoints();
-            }
-
             var winners = GetWinner();
 
             return new GetGameWinnerResponse
             {
                 IsValid = true,
                 Message = ValidMovesMessages.Ok,
-                Winners = winners
+                Winners = winners,
+                Players = game.Players,
+                LongestContPathLength = game.LongestContPathLength,
+                LongestContPathPlayerIndex = game.LongestContPathPlayerIndex
             };
         }
 
-        public void ComputeFinalPoints()
-        {
-            foreach (var player in game.Players)
-            {
-                //add route points
-                foreach (var completedDestination in player.CompletedDestinationCards)
-                {
-                    player.Points += completedDestination.PointValue;
-                }
-
-                foreach (var pendingDestination in player.PendingDestinationCards)
-                {
-                    player.Points -= pendingDestination.PointValue;
-                }
-            }
-            /* to do : add longest continuous path bonus */
-            game.IsOutcomeComputed = true;
-        }
-
+       
         public IList<Player> GetWinner()
         {
             var mostPoints = game.Players.Select(p => p.Points).Max();
@@ -305,6 +285,18 @@ namespace TicketToRide.Services
 
             var allPossibleMoves = GetAllPossibleMoves(playerIndex);
 
+            if (allPossibleMoves.AllPossibleMovesCount == 0)
+            {
+                //end game
+                game.EndGame();
+
+                return new MakeMoveResponse
+                {
+                    IsValid = true, //or false?
+                    Message = ValidMovesMessages.GameHasEndedNoMovesLeft
+                };
+            }
+
             if (player is BotPlayer bot)
             {
                 return GetBotMove(bot, allPossibleMoves);
@@ -319,33 +311,52 @@ namespace TicketToRide.Services
             }
         }
 
-        public PossibleMovesDto GetAllPossibleMoves(int playerIndex)
+        public PossibleMoves GetAllPossibleMoves(int playerIndex)
         {
-            var listOfDrawTrainCardMoves = new List<DrawTrainCardMoveDto>();
-            var listOfClaimRouteMoves = new List<ClaimRouteMoveDto>();
+            if (game.GameState == GameState.ChoosingDestinationCards)
+            {
+                //get all choose destination card moves and return
+                var moves = GetChooseDestinationCardMoves(playerIndex);
+                return new PossibleMoves(
+                    new List<DrawTrainCardMove>(),
+                    new List<ClaimRouteMove>(),
+                    null,
+                    moves);
+            }
 
-            //draw train cards can always be added
-            listOfDrawTrainCardMoves.AddRange(GetAllPossibleDrawTrainCardMoves(playerIndex));
+            var listOfDrawTrainCardMoves = new List<DrawTrainCardMove>();
+            var listOfClaimRouteMoves = new List<ClaimRouteMove>();
 
-            //add draw destination cards move
-            var destinationCardMove = GetDrawDestinationCardMove(playerIndex);
+            if (game.GameState == GameState.WaitingForPlayerMove ||
+                game.GameState == GameState.DecidingAction ||
+                game.GameState == GameState.DrawingTrainCards)
+            {
+                listOfDrawTrainCardMoves.AddRange(GetAllPossibleDrawTrainCardMoves(playerIndex));
+            }
 
             //add claimRouteMoves
-            listOfClaimRouteMoves.AddRange(GetAllClaimRouteMoves(playerIndex));
+            if (game.GameState == GameState.WaitingForPlayerMove ||
+                    game.GameState == GameState.DecidingAction)
+            {
+                listOfClaimRouteMoves.AddRange(GetAllClaimRouteMoves(playerIndex));
+            }
+
+            var destinationCardMove = GetDrawDestinationCardMove(playerIndex);
 
 
-            return new PossibleMovesDto(listOfDrawTrainCardMoves, listOfClaimRouteMoves, destinationCardMove);
+            return new PossibleMoves(listOfDrawTrainCardMoves, listOfClaimRouteMoves, destinationCardMove, new List<ChooseDestinationCardMove>());
         }
-        public List<ClaimRouteMoveDto> GetAllClaimRouteMoves(int playerIndex)
+
+        public List<ClaimRouteMove> GetAllClaimRouteMoves(int playerIndex)
         {
-            var possibleClaimRouteMoves = new HashSet<ClaimRouteMoveDto>();
+            var possibleClaimRouteMoves = new HashSet<ClaimRouteMove>();
             //go through all of them and see whether they can be claimed?
             var distinctRoutes = game.Board.Routes.Routes.Distinct();
 
             foreach (var route in distinctRoutes)
             {
                 //see whether they can be claimed
-                var canClaimRouteMove = new CanClaimRouteMove(game, playerIndex, route.Origin, route.Destination);
+                var canClaimRouteMove = new CanClaimRouteMove(playerIndex, route);
 
                 var canRouteBeClaimed = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove);
 
@@ -354,7 +365,7 @@ namespace TicketToRide.Services
                     continue;
                 }
 
-                var response = canClaimRouteMove.Execute();
+                var response = canClaimRouteMove.Execute(game);
                 if (!response.IsValid)
                 {
                     //not enough resources
@@ -365,12 +376,31 @@ namespace TicketToRide.Services
                 {
                     foreach (var color in canClaimRouteResponse.TrainColorsWhichCanBeUsed)
                     {
-                        possibleClaimRouteMoves.Add(new ClaimRouteMoveDto(CreateClaimRouteMove(playerIndex, color, route)));
+                        possibleClaimRouteMoves.Add(CreateClaimRouteMove(playerIndex, color, route));
                     }
                 }
             }
 
             return possibleClaimRouteMoves.ToList();
+        }
+
+        public List<ChooseDestinationCardMove> GetChooseDestinationCardMoves(int playerIndex)
+        {
+            //get all cards marked as waiting to be chosen
+            var destinationCardsToChooseFrom = game.Board.DestinationCards.Where(d => d.IsWaitingToBeChosen).ToList();
+
+            var combinationsOfChosenCards = CombinationGenerator.GetCombinations(destinationCardsToChooseFrom, 1, destinationCardsToChooseFrom.Count);
+
+            var moves = new List<ChooseDestinationCardMove>();
+
+            foreach (var chosenCards in combinationsOfChosenCards)
+            {
+                var notChosenCards = destinationCardsToChooseFrom.Except(chosenCards).ToList();
+                var move = new ChooseDestinationCardMove(playerIndex, chosenCards, notChosenCards);
+                moves.Add(move);
+            }
+
+            return moves;
         }
         #endregion
         #region frontend
@@ -388,7 +418,7 @@ namespace TicketToRide.Services
                 };
             }
 
-            var canClaimRouteMove = new CanClaimRouteMove(game, 0, originCity, destinationCity);
+            var canClaimRouteMove = new CanClaimRouteMove(0, originCity, destinationCity);
 
             var validateMove = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove);
             return validateMove;
@@ -486,7 +516,7 @@ namespace TicketToRide.Services
                 .FirstOrDefault();
         }
 
-        private MakeMoveResponse GetBotMove(BotPlayer bot,PossibleMovesDto possibleMoves)
+        private MakeMoveResponse GetBotMove(BotPlayer bot, PossibleMoves possibleMoves)
         {
             var move = bot.GetNextMove(game, possibleMoves);
 
@@ -501,49 +531,59 @@ namespace TicketToRide.Services
                 };
             }
 
-            //var validateMove = moveValidatorService.ValidateMove(move);
-            //if (!validateMove.IsValid)
-            //{
-            //    return validateMove;
-            //} no need for validation because bot chooses a move from all possible VALID moves
-
-            var response = move.Execute();
-
+            var response = move.Execute(game);
+            Console.WriteLine($"move made by : {move.PlayerIndex}");
+            if(move is DrawTrainCardMove)
+            {
+                Console.WriteLine($" {move.PlayerIndex} Drawn train card");
+            }
+            if (move is ClaimRouteMove)
+            {
+                Console.WriteLine($" {move.PlayerIndex} claimed route");
+            }
+            if (move is DrawDestinationCardMove)
+            {
+                Console.WriteLine($" {move.PlayerIndex} Drawn destination cards");
+            }
+            if (move is ChooseDestinationCardMove)
+            {
+                Console.WriteLine($" {move.PlayerIndex} Choose destination cards");
+            }
             return response;
         }
 
-        private List<DrawTrainCardMoveDto> GetAllPossibleDrawTrainCardMoves(int playerIndex)
+        private List<DrawTrainCardMove> GetAllPossibleDrawTrainCardMoves(int playerIndex)
         {
-            var drawTrainCardMoves = new List<DrawTrainCardMoveDto>();
+            var drawTrainCardMoves = new List<DrawTrainCardMove>();
 
             //draw from face down deck
-            var drawBlindCardMove = new DrawTrainCardMove(game, playerIndex, -1);
+            var drawBlindCardMove = new DrawTrainCardMove(playerIndex, -1);
             if (moveValidatorService.ValidateDrawTrainCardMove(drawBlindCardMove).IsValid)
             {
-                drawTrainCardMoves.Add(new DrawTrainCardMoveDto(drawBlindCardMove));
+                drawTrainCardMoves.Add(drawBlindCardMove);
             }
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < game.Board.FaceUpDeck.Count; i++)
             {
-                var drawFaceUpCardMove = new DrawTrainCardMove(game, playerIndex, i);
+                var drawFaceUpCardMove = new DrawTrainCardMove(playerIndex, i);
 
                 if (moveValidatorService.ValidateDrawTrainCardMove(drawFaceUpCardMove).IsValid)
                 {
-                    drawTrainCardMoves.Add(new DrawTrainCardMoveDto(drawFaceUpCardMove));
+                    drawTrainCardMoves.Add(drawFaceUpCardMove);
                 }
             }
 
             return drawTrainCardMoves;
         }
 
-        private DrawDestinationCardMoveDto? GetDrawDestinationCardMove(int playerIndex)
+        private DrawDestinationCardMove? GetDrawDestinationCardMove(int playerIndex)
         {
-            var drawDestinationCardMove = new DrawDestinationCardMove(game, playerIndex);
+            var drawDestinationCardMove = new DrawDestinationCardMove(playerIndex);
 
             var validateMove = moveValidatorService.ValidateDrawDestinationCardsMove(drawDestinationCardMove);
             if (validateMove.IsValid)
             {
-                return new DrawDestinationCardMoveDto(drawDestinationCardMove);
+                return drawDestinationCardMove;
             }
             else
             {
@@ -553,7 +593,7 @@ namespace TicketToRide.Services
 
         private ClaimRouteMove CreateClaimRouteMove(int playerIndex, TrainColor color, Model.GameBoard.Route route)
         {
-            return new ClaimRouteMove(game, playerIndex, color, route.Origin, route.Destination);
+            return new ClaimRouteMove(playerIndex, color, route);
             //don't validate it, it's already valid
         }
 

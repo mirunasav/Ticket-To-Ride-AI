@@ -1,0 +1,39 @@
+.swal2-popup {
+    width: 500px;
+}
+
+.swal2-input {
+    margin: 10px 0;
+    height: 40px !important;
+}
+
+.swal2-form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+label {
+    margin-bottom: 5px;
+    font-size: 17px;
+}
+
+.swal2-form-group select {
+    width: 100%;
+}
+
+.swal2
+#submitButton {
+    width: 50%;
+    margin-top: 20px;
+}
+
+select{
+   border-color:  rgb(217, 217, 217);
+}
+
+#submitButton:disabled{
+    opacity: 0.5 !important;
+    cursor:not-allowed !important;
+}

@@ -8,64 +8,64 @@
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Include any other CSS or JavaScript files here -->
 </head>
 
 <body>
     <!-- Your HTML content goes here -->
-    <div id="main-container">
-        <div id="messages-container">
-            <div id="messages-container__player-turn-message">
-                <span>Choose action: draw 2 train cards, claim a route or </span>
-                <button id="drawDestinationCardsButton"> Draw destination cards </button>
+    <div id="main-container" style="display: none">
+        <div id="messages-new-game-button-container">
+            <div id='new-game-button-container'>
+                <button id="newGameButton"> New Game</button>
             </div>
-            <div id="messages-container__waiting-message">
-                <span>Waiting for opponent move...</span>
-            </div>
-            <div id="choose-destination-cards-container" style="display:none">
-                <div id="possible-destinations-list">
+            <div id=messages-container>
+                <div id="messages-container__player-turn-message">
+                    <span>Choose action: draw 2 train cards, claim a route or </span>
+                    <button id="drawDestinationCardsButton"> Draw destination cards </button>
                 </div>
-                <button id="chooseDestinationsButton" disabled> Choose Destinations </button>
-            </div>
-            <div id="messages-container__error-message" style="display: none;">
-                <span></span>
-            </div>
-            <div id="messages-container__information-message" style="display: none;">
-                <span></span>
+                <div id="messages-container__waiting-message">
+                    <span>Waiting for opponent move...</span>
+                </div>
+                <div id="messages-container__game-ended-message" style="display:none">
+                    <span>Game ended! Click 'New Game' button to play again.<span>
+                </div>
+                <div id="choose-destination-cards-container" style="display:none">
+                    <div id="possible-destinations-list">
+                    </div>
+                    <button id="chooseDestinationsButton" disabled> Choose Destinations </button>
+                </div>
+                <div id="messages-container__error-message" style="display: none;">
+                    <span></span>
+                </div>
+                <div id="messages-container__information-message" style="display: none;">
+                    <span></span>
+                </div>
             </div>
         </div>
         <div id="main-game-container">
             <div id=game-container>
+                <div id="player-destination-cards-container">
+                    <h2>Destinations</h2>
+                    <p class='destination-cards-title' id="pending-destination-cards-title">Pending</p>
+                    <div id="pending-destinations-container"></div>
 
-                <div id="board-and-deck-container">
-                    <div id="player-destination-cards-container">
-                        <h2>Destinations</h2>
-                        <p class='destination-cards-title' id="pending-destination-cards-title">Pending</p>
-                        <div id="pending-destinations-container"></div>
-
-                        <p class='destination-cards-title' id="completed-destination-cards-title">Completed</p>
-                        <div id="completed-destinations-container"></div>
-                    </div>
-                    <div id='board-container'></div>
-                    <div id="train-card-deck-container"></div>
+                    <p class='destination-cards-title' id="completed-destination-cards-title">Completed</p>
+                    <div id="completed-destinations-container"></div>
                 </div>
-                <div id=player-cards-container>
-                    <div id="player-train-cards-container"></div>
+                <div id="board-and-train-cards-container">
+                    <div id="board-and-deck-container">
+                        <div id='board-container'></div>
+                        <div id="train-card-deck-container"></div>
+                    </div>
+                    <div id=player-cards-container>
+                        <div id="player-train-cards-container"></div>
+                    </div>
                 </div>
             </div>
-            <div id="player-stats-create-game-container">
+            <div id="player-stats-container">
                 <div id='all-player-stats-container'></div>
-                <div id="init-game-button-container">
-                    <label for="numberOfPlayers">Number of Players:</label>
-                    <input type="number" id="numberOfPlayers" name="numberOfPlayers" min="2" max="4">
-                    <button id="createGameButton">Create Game</button>
-                </div>
-                <button id="newGameButton"> New Game</button>
             </div>
 
         </div>
-        <!-- This is where the p5.js canvas will be rendered -->
-        <!-- Include any other HTML content here -->
     </div>
     </div>
 
@@ -75,6 +75,7 @@
     <script type="module" src="./js/gameObjects.js"></script>
     <script type="module" src="./js/getObjectsFromEnum.js"></script>
     <link rel="stylesheet" href="./css/canvas.css">
+    <link rel="stylesheet" href="./css/createGameSweetAlert.css">
 </body>
 
 </html>
