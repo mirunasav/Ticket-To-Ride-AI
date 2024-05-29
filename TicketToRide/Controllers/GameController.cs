@@ -82,7 +82,6 @@ namespace TicketToRide.Controllers
             {
                 return BadRequest("Invalid player index.");
             }
-
         }
 
         [HttpGet]

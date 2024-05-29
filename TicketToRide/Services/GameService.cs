@@ -36,6 +36,7 @@ namespace TicketToRide.Services
 
         public Game GetGameInstance(int playerIndex)
         {
+            
             var game = gameProvider.GetGame();
 
             //check if playerIndex is out of bounds
@@ -503,7 +504,7 @@ namespace TicketToRide.Services
                 }
             }
 
-            var newGame = new Game(game.Board, players, game.GameState, game.PlayerTurn);
+            var newGame = new Game(game.Board, players, game.GameState, game.PlayerTurn, game.GameLog);
 
             return newGame;
         }
@@ -532,23 +533,7 @@ namespace TicketToRide.Services
             }
 
             var response = move.Execute(game);
-            Console.WriteLine($"move made by : {move.PlayerIndex}");
-            if(move is DrawTrainCardMove)
-            {
-                Console.WriteLine($" {move.PlayerIndex} Drawn train card");
-            }
-            if (move is ClaimRouteMove)
-            {
-                Console.WriteLine($" {move.PlayerIndex} claimed route");
-            }
-            if (move is DrawDestinationCardMove)
-            {
-                Console.WriteLine($" {move.PlayerIndex} Drawn destination cards");
-            }
-            if (move is ChooseDestinationCardMove)
-            {
-                Console.WriteLine($" {move.PlayerIndex} Choose destination cards");
-            }
+          
             return response;
         }
 

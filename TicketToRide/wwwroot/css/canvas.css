@@ -135,7 +135,7 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    padding: 20px 20px;
+    padding: 20px 0px 20px 20px;
 }
 
 #board-and-deck-container {
@@ -197,7 +197,7 @@ canvas {
 }
 
 .train-card-image {
-    margin: 3px 10px;
+    margin: 3px 5px;
     height: 10vh;
     width: 8vw;
 }
@@ -269,12 +269,38 @@ canvas {
 #player-stats-container {
     display: flex;
     flex-direction: column;
-    width: 20vw;
+    width:100%;
     padding-inline: 10px;
+}
+
+#player-stats-game-log-container{
+    display: flex;
+    flex-direction: column;
+}
+
+#game-log-container{
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(255,255,255, 0.5);
+    border-radius: 10px;
+    padding: 10px;
+    margin-right: 5px;
+}
+
+#game-log-container__lines{
+    display: flex;
+    flex-direction: column;
+    gap:10px
+}
+
+#game-log-container__title h3{
+    margin: 0px 0px;
 }
 
 #newGameButton {
     height: 40px;
     width: 200px;
     margin-top: 20px;
+    border-radius: 5px;
+    border-width: 1px;
 }

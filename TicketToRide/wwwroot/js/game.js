@@ -4,6 +4,7 @@ import { initializeCities } from "./city.js";
 import { getGameOutcomeRequest } from "./computeGameOutcomeRequest.js";
 import { openCreateNewGameSweetAlert } from "./createGameSweetAlert.js";
 import { displayPlayerDestinationCards, emptyHoveredCityNames, hoveredCityNames } from "./destinationCards.js";
+import { displayGameLog } from "./gameLog.js";
 import { GameState } from "./gameStates.js";
 import { getExistingGameRequest, getNewGameRequest } from "./getGameRequest.js";
 import { getGameStateRequest } from "./getGameStateRequest.js";
@@ -132,6 +133,7 @@ async function displayGame(exists = true) {
         initPlayerDestinationCards(playerIndex);
         initPlayerStatistics(playerIndex);
         initMessagesContainer(playerTurn, playerIndex);
+        initGameLog(responseJson.gameLog)
         setInterval(updateGameState, 2000);
         if (!exists) {
             changeVisibilities(false)
@@ -234,6 +236,10 @@ function initPlayerStatistics(playerIndex) {
     initDisplayPlayerStatistics(players, playerIndex);
 }
 
+function initGameLog(gameLog){
+    displayGameLog(gameLog);
+}
+
 export function initMessagesContainer(playerTurn, playerIndex) {
     var playerTurnContainer = document.getElementById('messages-container__player-turn-message');
     var playerWaitingContainer = document.getElementById('messages-container__waiting-message');
@@ -258,7 +264,6 @@ export function initMessagesContainer(playerTurn, playerIndex) {
     }
 }
 
-
 function printGame() {
     console.log(gameInstance)
 }
@@ -272,31 +277,6 @@ function getPlayerIndex() {
     }
     else {
         return 0;
-    }
-}
-
-function getPlayerTypesFromUrl() {
-    const queryString = window.location.search;
-    const searchParams = new URLSearchParams(queryString);
-    const playerTypes = [];
-    searchParams.forEach((value, key) => {
-        if (key === 'playerType') {
-            playerTypes.push(value);
-        }
-    });
-
-    return playerTypes;
-}
-
-function getNumberOfPlayersFromUrl() {
-    const queryString = window.location.search;
-    const params = new URLSearchParams(queryString);
-    const playerIndex = params.get("numberOfPlayers");
-    if (playerIndex) {
-        return playerIndex;
-    }
-    else {
-        return 2;
     }
 }
 
@@ -432,10 +412,6 @@ export async function updateGameState() {
             playerTurn = updatedGameState.playerTurn;
             gameState = getGameStateFromNumber(updatedGameState.gameState);
             hasGameEnded = gameState == GameState.Ended;
-            console.log("playerTurn", playerTurn)
-            console.log("playerIndex", playerIndex)
-            console.log("hasGameEnded", hasGameEnded)
-
 
             if (playerTurn == playerIndex
                 && currentPlayer.isBot
@@ -453,7 +429,7 @@ export async function updateGameState() {
         }
         else {
             console.log("displayingGameResults", displayingGameResults)
-            if ( displayingGameResults == false) {
+            if (displayingGameResults == false) {
                 let gameOutcome = await getGameOutcomeRequest();
                 console.log('game outcome', gameOutcome);
                 displayWinners(gameOutcome);

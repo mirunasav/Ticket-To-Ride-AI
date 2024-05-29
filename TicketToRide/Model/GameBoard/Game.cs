@@ -1,5 +1,4 @@
-﻿using TicketToRide.Model.Cards;
-using TicketToRide.Model.Enums;
+﻿using TicketToRide.Model.Enums;
 using TicketToRide.Model.Players;
 
 namespace TicketToRide.Model.GameBoard
@@ -20,18 +19,28 @@ namespace TicketToRide.Model.GameBoard
 
         public int LongestContPathPlayerIndex {  get; set; }
 
+        public GameLog GameLog { get; set; }
+
         public Game(Board board, IList<Player> players)
         {
             this.Board = board;
             this.Players = players;
+            this.GameLog = new GameLog(players.Count);
         }
 
-        public Game(Board board, IList<Player> players, GameState gameState, int playerTurn)
+        //for player POV
+        public Game(Board board,
+            IList<Player> players, 
+            GameState gameState, 
+            int playerTurn,
+            GameLog gameLog
+            )
         {
             Board = board;
             Players = players;
             GameState = gameState;
             PlayerTurn = playerTurn;
+            GameLog = gameLog;
         }
 
 

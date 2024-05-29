@@ -23,12 +23,20 @@ namespace TicketToRide.Moves
 
             game.GameState = Model.Enums.GameState.ChoosingDestinationCards;
 
+            var gameLogMessage = CreateGameLogMessage(game.Players.ElementAt(PlayerIndex).Name);
+            LogMove(game.GameLog, gameLogMessage);
+
             return new DrawDestinationCardsResponse
             {
                 IsValid = true,
                 Message = ValidMovesMessages.PlayerHasDrawnDestinationCards,
                 DrawnDestinationCards = destinationCards
             };
+        }
+
+        private string CreateGameLogMessage(string playerName)
+        {
+            return $"{playerName} has drawn destination cards.";
         }
     }
 }

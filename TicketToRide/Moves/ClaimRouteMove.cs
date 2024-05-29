@@ -71,6 +71,12 @@ namespace TicketToRide.Moves
             //change gameState
             game.UpdateStateNextPlayerTurn();
 
+            var gameLogMessage = CreateGameLogMessage(
+                game.Players.ElementAt(PlayerIndex).Name,
+                Route.ElementAt(0).Origin.ToString(),
+                Route.ElementAt(0).Destination.ToString());
+            LogMove(game.GameLog, gameLogMessage);
+
             return new ClaimRouteResponse
             {
                 IsValid = true,
@@ -79,5 +85,11 @@ namespace TicketToRide.Moves
                 NewlyCompletedDestinations = newlyCompletedDestinations
             };
         }
+
+        private string CreateGameLogMessage(string playerName, string originCity, string destinationCity)
+        {
+            return $"{playerName} has claimed a route from {originCity} to {destinationCity}.";
+        }
+
     }
 }

@@ -37,11 +37,19 @@ namespace TicketToRide.Moves
 
             game.UpdateStateNextPlayerTurn();
 
+            var gameLogMessage = CreateGameLogMessage(game.Players.ElementAt(PlayerIndex).Name);
+            LogMove(game.GameLog, gameLogMessage);
+
             return new MakeMoveResponse
             {
                 IsValid = true,
                 Message = ValidMovesMessages.PlayerHasChosenDestinationCards
             };
+        }
+
+        private string CreateGameLogMessage(string playerName)
+        {
+            return $"{playerName} has chosen destination cards.";
         }
     }
 }

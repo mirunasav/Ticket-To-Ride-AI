@@ -17,12 +17,15 @@ namespace TicketToRide.Moves
         public override MakeMoveResponse Execute(Game game)
         {
             bool isTurnFinishedByLocomotiveDraw = false;
+            string cardColor;
 
             if (faceUpCardIndex != -1)
             {
                 //draw from face up card
                 var card = game.Board.FaceUpDeck.ElementAt(faceUpCardIndex);
                 game.Board.FaceUpDeck.Remove(card);
+
+                cardColor = card.Color.ToString();
 
                 //add to player hand
                 game.GetPlayer(PlayerIndex).Hand.Add(card);
@@ -39,6 +42,8 @@ namespace TicketToRide.Moves
             {
                 //take first card from deck
                 var card = game.Board.Deck.Pop(1);
+
+                cardColor = card[0].Color.ToString();
 
                 //add to player hand
                 game.GetPlayer(PlayerIndex).Hand.AddRange(card);
@@ -60,11 +65,30 @@ namespace TicketToRide.Moves
                 game.UpdateStateNextPlayerTurn();
             }
 
+            var gameLogMessage = CreateGameLogMessage(
+                game.GetPlayer(PlayerIndex).Name, 
+                cardColor,
+                faceUpCardIndex != -1);
+
+            LogMove(game.GameLog, gameLogMessage);
+           
             return new MakeMoveResponse
             {
                 IsValid = true,
                 Message = ValidMovesMessages.PlayerDrawTrainCard
             };
+        }
+
+        private string CreateGameLogMessage(string playerName, string trainColor, bool isFromFaceUpDeck)
+        {
+            if (isFromFaceUpDeck)
+            {
+                return $"{playerName} has drawn a {trainColor} card from the face up deck.";
+            }
+            else
+            {
+                return $"{playerName} has drawn a card from the face down deck.";
+            }
         }
 
         private GameState UpdateGameState(Game game, bool isTurnFinished = false)
