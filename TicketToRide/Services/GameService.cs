@@ -20,6 +20,8 @@ namespace TicketToRide.Services
 
         private Game game;
 
+        private Object gameLock = new Object();
+
         public GameService(
             GameProvider gameProvider,
             MoveValidatorService moveValidatorService)
@@ -36,7 +38,7 @@ namespace TicketToRide.Services
 
         public Game GetGameInstance(int playerIndex)
         {
-            
+
             var game = gameProvider.GetGame();
 
             //check if playerIndex is out of bounds
@@ -255,8 +257,8 @@ namespace TicketToRide.Services
             };
         }
 
-       
-        public IList<Player> GetWinner()
+
+        public List<Player> GetWinner()
         {
             var mostPoints = game.Players.Select(p => p.Points).Max();
 
@@ -342,8 +344,13 @@ namespace TicketToRide.Services
                 listOfClaimRouteMoves.AddRange(GetAllClaimRouteMoves(playerIndex));
             }
 
-            var destinationCardMove = GetDrawDestinationCardMove(playerIndex);
+            DrawDestinationCardMove? destinationCardMove = null;
 
+            if (game.GameState == GameState.WaitingForPlayerMove ||
+                    game.GameState == GameState.DecidingAction)
+            {
+                destinationCardMove = GetDrawDestinationCardMove(playerIndex);
+            }
 
             return new PossibleMoves(listOfDrawTrainCardMoves, listOfClaimRouteMoves, destinationCardMove, new List<ChooseDestinationCardMove>());
         }
@@ -402,6 +409,57 @@ namespace TicketToRide.Services
             }
 
             return moves;
+        }
+
+        public MakeMoveResponse RunGame()
+        {
+            foreach (var player in game.Players)
+            {
+                if (!player.IsBot)
+                {
+                    return new MakeMoveResponse
+                    {
+                        IsValid = false,
+                        Message = InvalidMovesMessages.NotAllPlayersAreBots
+                    };
+                }
+            }
+
+            var playerTurn = 0;
+            string message = string.Empty;
+
+            while (game.GameState != GameState.Ended)
+            {
+                lock (gameLock)
+                {
+                    playerTurn = game.PlayerTurn;
+                    var moveResponse = MakeBotMove(playerTurn);
+                    if (!moveResponse.IsValid)
+                    {
+                        return moveResponse;
+                    }
+
+                    if (moveResponse.Message == ValidMovesMessages.GameHasEndedNoMovesLeft)
+                    {
+                        message = moveResponse.Message;
+                        break;
+                    }
+                }
+
+            }
+
+            if (message != string.Empty)
+            {
+                message = ValidMovesMessages.GameHasEnded;
+            };
+
+            return new RunGameResponse(
+                true,
+                message,
+                game.Players,
+                GetWinner(),
+                game.LongestContPathLength,
+                game.LongestContPathPlayerIndex);
         }
         #endregion
         #region frontend
@@ -519,22 +577,24 @@ namespace TicketToRide.Services
 
         private MakeMoveResponse GetBotMove(BotPlayer bot, PossibleMoves possibleMoves)
         {
-            var move = bot.GetNextMove(game, possibleMoves);
-
-            var canMakeMoveMessage = CanMakeMove(move);
-
-            if (canMakeMoveMessage != ValidMovesMessages.Ok)
+            lock (gameLock)
             {
-                return new MakeMoveResponse
-                {
-                    IsValid = false,
-                    Message = canMakeMoveMessage
-                };
-            }
+                var move = bot.GetNextMove(game, possibleMoves);
 
-            var response = move.Execute(game);
-          
-            return response;
+                var canMakeMoveMessage = CanMakeMove(move);
+
+                if (canMakeMoveMessage != ValidMovesMessages.Ok)
+                {
+                    return new MakeMoveResponse
+                    {
+                        IsValid = false,
+                        Message = canMakeMoveMessage
+                    };
+                }
+                var response = move.Execute(game);
+
+                return response;
+            }
         }
 
         private List<DrawTrainCardMove> GetAllPossibleDrawTrainCardMoves(int playerIndex)

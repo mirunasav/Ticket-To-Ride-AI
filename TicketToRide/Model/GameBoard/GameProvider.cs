@@ -56,6 +56,8 @@ namespace TicketToRide.Model.GameBoard
                     return new Player($"player{index + 1}", playerColor, index);
                 case PlayerType.RandomDecisionBot:
                     return new RandomDecisionBot($"player{index + 1}", playerColor, index);
+                case PlayerType.PseudoRandomBot:
+                    return new PseudoRandomBot($"player{index + 1}", playerColor, index);
                 default:
                     return new Player($"player{index + 1}", playerColor, index);
             }

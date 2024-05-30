@@ -26,5 +26,7 @@ namespace TicketToRide.Model.Constants
         public const string GameNotEndedYet = "Cannot compute game outcome. Game not ended yet";
 
         public const string PlayerNotBot = "This player is not a bot";
+
+        public const string NotAllPlayersAreBots = "Game cannot be run because not all players are bots";
     }
 }

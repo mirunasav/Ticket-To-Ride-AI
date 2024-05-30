@@ -7,7 +7,7 @@ namespace TicketToRide.Model.GameBoard
     {
         public Board Board { get; set; }
 
-        public IList<Player> Players { get; set; } = new List<Player>();
+        public List<Player> Players { get; set; } = new List<Player>();
 
         public int PlayerTurn { get; set; } = 0;
 
@@ -21,7 +21,7 @@ namespace TicketToRide.Model.GameBoard
 
         public GameLog GameLog { get; set; }
 
-        public Game(Board board, IList<Player> players)
+        public Game(Board board, List<Player> players)
         {
             this.Board = board;
             this.Players = players;
@@ -30,7 +30,7 @@ namespace TicketToRide.Model.GameBoard
 
         //for player POV
         public Game(Board board,
-            IList<Player> players, 
+            List<Player> players, 
             GameState gameState, 
             int playerTurn,
             GameLog gameLog

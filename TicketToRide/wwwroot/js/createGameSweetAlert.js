@@ -29,6 +29,7 @@ export async function openCreateNewGameSweetAlert() {
                                 <option value="">Select type</option>
                                 <option value="Human">Human</option>
                                 <option value="RandomDecisionBot">Random Decision Bot</option>
+                                <option value="PseudoRandomBot">Pseudo Random Bot</option>
                             </select>
                         `;
                         playerFieldsContainer.appendChild(playerField);

@@ -17,8 +17,8 @@ namespace TicketToRide.Moves
         public PossibleMoves(
             List<DrawTrainCardMove> drawTrainCards,
             List<ClaimRouteMove> claimRoutes,
-            DrawDestinationCardMove drawDestinationCard, 
-            List<ChooseDestinationCardMove> chooseDestinationCardMoves) 
+            DrawDestinationCardMove? drawDestinationCard,
+            List<ChooseDestinationCardMove> chooseDestinationCardMoves)
         { 
             DrawTrainCardMoves = drawTrainCards;
             ClaimRouteMoves = claimRoutes;

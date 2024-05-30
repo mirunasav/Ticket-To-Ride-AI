@@ -326,7 +326,6 @@ namespace TicketToRide.Controllers
             return Json(response);
         }
 
-        //not to be used from interface
         [HttpGet]
         public IActionResult GetAllPossibleMoves(int playerIndex)
         {
@@ -340,6 +339,153 @@ namespace TicketToRide.Controllers
         {
             var response = gameService.GetAllClaimRouteMoves(playerIndex);
             return Json(response);
+        }
+
+        [HttpGet]
+        public IActionResult RunGame()
+        {
+            var gameResult = gameService.RunGame();
+
+            if (!gameResult.IsValid)
+            {
+                return BadRequest(gameResult.Message);
+            }
+
+            if (gameResult is RunGameResponse response)
+            {
+                return Json(new
+                {
+                    winners = response.Winners,
+                    players = response.Players,
+                    longestContPathLength = response.LongestContPathLength,
+                    longestContPathPlayerIndex = response.LongestContPathPlayerIndex
+                });
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPost]
+        public IActionResult RunMultipleGames([FromBody] NewMultipleGamesRequest newMultipleGamesRequest)
+        {
+            int numberOfGames = newMultipleGamesRequest.NumberOfGames;
+            Dictionary<int, int> numberOfGamesWonByEachPlayer = new Dictionary<int, int>();
+            var gameSummaries = new MultipleGameResponse();
+
+            if (newMultipleGamesRequest.NumberOfPlayers < 2 || newMultipleGamesRequest.NumberOfPlayers > 4)
+            {
+                return BadRequest("Number of Players needs to be between 2 and 4");
+            }
+
+            var playerTypes = new List<PlayerType>();
+
+            if (newMultipleGamesRequest.PlayerTypes != null && newMultipleGamesRequest.PlayerTypes.Count > 0)
+            {
+                if (newMultipleGamesRequest.PlayerTypes.Count != newMultipleGamesRequest.NumberOfPlayers)
+                {
+                    return BadRequest("Invalid number of player types provided");
+                }
+
+                foreach (var type in newMultipleGamesRequest.PlayerTypes)
+                {
+                    bool typeExists = Enum.TryParse(type, out PlayerType playerType);
+
+                    if (!typeExists)
+                    {
+                        return BadRequest("Invalid playerType");
+                    }
+                    playerTypes.Add(playerType);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < newMultipleGamesRequest.NumberOfPlayers; i++)
+                {
+                    playerTypes.Add(PlayerType.Human);
+                }
+            }
+
+            for (int i = 0; i < numberOfGames; i++)
+            {
+                gameService.InitializeGame(newMultipleGamesRequest.NumberOfPlayers, playerTypes);
+                var gameResult = gameService.RunGame();
+
+                if (!gameResult.IsValid)
+                {
+                    var message = $"error at game {i} : {gameResult.Message}";
+                    return BadRequest(message);
+                }
+
+                if (gameResult is RunGameResponse response)
+                {
+                    var gameSummaryResponse = new GameSummaryResponse();
+                    foreach (var winner in response.Winners)
+                    {
+                        int playerIndex = winner.PlayerIndex;
+
+                        gameSummaryResponse.WinnerPlayerIndex.Add(playerIndex);
+
+                        // Check if the playerIndex exists in the dictionary
+                        if (numberOfGamesWonByEachPlayer.TryGetValue(playerIndex, out int value))
+                        {
+                            numberOfGamesWonByEachPlayer[playerIndex] = ++value;
+                        }
+                        else
+                        {
+                            numberOfGamesWonByEachPlayer[playerIndex] = 1;
+                        }
+                    }
+                    gameSummaryResponse.Players = response.Players;
+                    gameSummaries.GameSummaries.Add(gameSummaryResponse);
+                }
+            }
+
+            gameSummaries.NumberOfGamesWonByEachPlayer = numberOfGamesWonByEachPlayer;
+
+            return Json(gameSummaries);
+
+        }
+        [HttpPost]
+        public IActionResult RunNewGame([FromBody] NewGameRequest newGameRequest)
+        {
+            if (newGameRequest.NumberOfPlayers < 2 || newGameRequest.NumberOfPlayers > 4)
+            {
+                return BadRequest("Number of Players needs to be between 2 and 4");
+            }
+
+            var playerTypes = new List<PlayerType>();
+
+            if (newGameRequest.PlayerTypes != null && newGameRequest.PlayerTypes.Count > 0)
+            {
+                if (newGameRequest.PlayerTypes.Count != newGameRequest.NumberOfPlayers)
+                {
+                    return BadRequest("Invalid number of player types provided");
+                }
+
+                foreach (var type in newGameRequest.PlayerTypes)
+                {
+                    bool typeExists = Enum.TryParse(type, out PlayerType playerType);
+
+                    if (!typeExists)
+                    {
+                        return BadRequest("Invalid playerType");
+                    }
+                    playerTypes.Add(playerType);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < newGameRequest.NumberOfPlayers; i++)
+                {
+                    playerTypes.Add(PlayerType.Human);
+                }
+            }
+
+            gameService.InitializeGame(newGameRequest.NumberOfPlayers, playerTypes);
+
+            return RunGame();
         }
         #endregion
 
@@ -384,5 +530,6 @@ namespace TicketToRide.Controllers
             });
         }
         #endregion
+
     }
 }
