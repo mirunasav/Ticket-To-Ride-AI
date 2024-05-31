@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
+using System.Collections.Generic;
 using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
 using TicketToRide.Helpers;
@@ -18,16 +19,20 @@ namespace TicketToRide.Services
 
         private readonly MoveValidatorService moveValidatorService;
 
+        private readonly RouteService routeService;
+
         private Game game;
 
         private Object gameLock = new Object();
 
         public GameService(
             GameProvider gameProvider,
-            MoveValidatorService moveValidatorService)
+            MoveValidatorService moveValidatorService, 
+            RouteService routeService)
         {
             this.gameProvider = gameProvider;
             this.moveValidatorService = moveValidatorService;
+            this.routeService = routeService;
         }
 
         public Game InitializeGame(int numberOfPlayers, List<PlayerType> playerTypes)
@@ -357,14 +362,17 @@ namespace TicketToRide.Services
 
         public List<ClaimRouteMove> GetAllClaimRouteMoves(int playerIndex)
         {
-            var possibleClaimRouteMoves = new HashSet<ClaimRouteMove>();
+            var possibleClaimRouteMoves = new List<ClaimRouteMove>();
             //go through all of them and see whether they can be claimed?
-            var distinctRoutes = game.Board.Routes.Routes.Distinct();
+            var routes = game.Board.Routes.Routes;
 
-            foreach (var route in distinctRoutes)
+            foreach (var route in routes)
             {
+                //get route list, in case it is a double route
+                var routeList = routeService.GetRoute(route.Origin, route.Destination);
+
                 //see whether they can be claimed
-                var canClaimRouteMove = new CanClaimRouteMove(playerIndex, route);
+                var canClaimRouteMove = new CanClaimRouteMove(playerIndex, routeList);
 
                 var canRouteBeClaimed = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove);
 
@@ -384,7 +392,7 @@ namespace TicketToRide.Services
                 {
                     foreach (var color in canClaimRouteResponse.TrainColorsWhichCanBeUsed)
                     {
-                        possibleClaimRouteMoves.Add(CreateClaimRouteMove(playerIndex, color, route));
+                        possibleClaimRouteMoves.Add(CreateClaimRouteMove(playerIndex, color, routeList));
                     }
                 }
             }
@@ -636,7 +644,7 @@ namespace TicketToRide.Services
             }
         }
 
-        private ClaimRouteMove CreateClaimRouteMove(int playerIndex, TrainColor color, Model.GameBoard.Route route)
+        private ClaimRouteMove CreateClaimRouteMove(int playerIndex, TrainColor color, List<Model.GameBoard.Route> route)
         {
             return new ClaimRouteMove(playerIndex, color, route);
             //don't validate it, it's already valid

@@ -66,7 +66,7 @@ namespace TicketToRide.Services
             };
         }
 
-        public IList<Model.GameBoard.Route> GetRoute(City origin, City destination)
+        public List<Model.GameBoard.Route> GetRoute(City origin, City destination)
         {
             return gameProvider.GetGame().Board.Routes.GetRoute(origin, destination);
         }

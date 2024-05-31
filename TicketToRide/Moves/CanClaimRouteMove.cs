@@ -11,7 +11,7 @@ namespace TicketToRide.Moves
 
         public City Destination { get; set; }
 
-        public IList<Model.GameBoard.Route> Route { get; set; }
+        public List<Model.GameBoard.Route> Route { get; set; }
 
         public CanClaimRouteMove(int playerIndex, City origin, City destination)
             : base(playerIndex)
@@ -20,12 +20,12 @@ namespace TicketToRide.Moves
             this.Destination = destination;
         }
 
-        public CanClaimRouteMove(int playerIndex, Model.GameBoard.Route route)
+        public CanClaimRouteMove(int playerIndex, List<Model.GameBoard.Route> route)
              : base(playerIndex)
         {
-            this.Origin = route.Origin;
-            this.Destination = route.Destination;
-            Route = new List<Model.GameBoard.Route> { route };
+            this.Origin = route.ElementAt(0).Origin;
+            this.Destination = route.ElementAt(0).Destination;
+            Route = [.. route];
         }
 
         public override MakeMoveResponse Execute(Game game)
@@ -60,7 +60,6 @@ namespace TicketToRide.Moves
                 };
             }
         }
-
     }
 }
 

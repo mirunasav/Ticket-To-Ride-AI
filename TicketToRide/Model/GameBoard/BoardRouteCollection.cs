@@ -1,16 +1,28 @@
-﻿using TicketToRide.Model.Cards;
-using TicketToRide.Model.Enums;
+﻿using TicketToRide.Model.Enums;
 using TicketToRide.Model.Players;
 
 namespace TicketToRide.Model.GameBoard
 {
     public class BoardRouteCollection
     {
-        public IList<Route> Routes { get; set; } = new List<Route>();
+        public List<Route> Routes { get; set; } = [];
+
+        private Dictionary<RouteOriginDestination, List<Route>> RouteDictionary { get; set; } = new Dictionary<RouteOriginDestination, List<Route>>();
 
         public void AddRoute(City origin, City destination, TrainColor trainColor, int length)
         {
-            Routes.Add(new Route(origin, destination, trainColor, length));
+            var key = new RouteOriginDestination(origin, destination);
+            var newRoute = new Route(origin, destination, trainColor, length);
+
+            if (!RouteDictionary.TryGetValue(key, out List<Route>? value))
+            {
+                value = [];
+                RouteDictionary[key] = value;
+            }
+
+            value.Add(newRoute);
+
+            Routes.Add(newRoute);
         }
 
         public bool IsRouteValid(
@@ -26,8 +38,6 @@ namespace TicketToRide.Model.GameBoard
 
         public bool CanPlayerClaimRoute(Route route, Player player)
         {
-            //aici? sau in alt serviciu
-            //vad daca ruta e claimed
             if (route.IsClaimed)
             {
                 //logica in plus pt jocuri cu 3-4 pers?
@@ -87,25 +97,38 @@ namespace TicketToRide.Model.GameBoard
             return cardsWhichCanBeUsed;
         }
 
-        public IList<Route> GetRoute(
+        public List<Route> GetRoute(
             City origin,
             City destination,
             TrainColor trainColor = default,
             int length = default,
             bool isClaimed = false)
         {
-            var routeQuery = Routes.AsQueryable()
-                .Where(r => (r.Origin == origin && r.Destination == destination)
-                || (r.Origin == destination && r.Destination == origin));
+
+            var key1 = new RouteOriginDestination(origin, destination);
+
+            var routeList = new List<Route>();
+
+            if (RouteDictionary.TryGetValue(key1, out List<Route>? value1))
+            {
+                routeList.AddRange(value1);
+            }
+
+            var routeQuery = routeList.AsQueryable();
 
             if (trainColor != default)
             {
                 routeQuery = routeQuery.Where(r => r.Color == trainColor);
             }
 
-            if (length != default)
+            if (length > 0)
             {
                 routeQuery = routeQuery.Where(r => r.Length == length);
+            }
+
+            if (isClaimed)
+            {
+                routeQuery = routeQuery.Where(r => r.IsClaimed == isClaimed);
             }
 
             return routeQuery.ToList();
@@ -113,9 +136,17 @@ namespace TicketToRide.Model.GameBoard
 
         public Route? GetRoute(City origin, City destination, TrainColor trainColor)
         {
-            return Routes.Where(r => (r.Color == trainColor || r.Color == TrainColor.Grey) &&
-            ((r.Origin == origin && r.Destination == destination)
-                || (r.Origin == destination && r.Destination == origin))).FirstOrDefault();
+            var key1 = new RouteOriginDestination(origin, destination);
+
+            List<Route> routes = new List<Route>();
+
+            if (RouteDictionary.ContainsKey(key1))
+            {
+                routes.AddRange(RouteDictionary[key1]);
+            }
+
+            return routes.FirstOrDefault(r => (r.Color == trainColor || r.Color == TrainColor.Grey) &&
+               ((r.Origin == origin && r.Destination == destination) || (r.Origin == destination && r.Destination == origin)));
         }
     }
 }

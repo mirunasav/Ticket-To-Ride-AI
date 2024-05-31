@@ -69,8 +69,9 @@ namespace TicketToRide.Controllers
             //pasez player index si iau datele pt fiecare player, restul au hide data
             try
             {
+                
                 var game = gameService.GetGameInstance(playerIndex);
-
+                
                 if (game is null)
                 {
                     return NotFound("Game is null");

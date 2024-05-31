@@ -2,12 +2,13 @@
 using TicketToRide.Model.Constants;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
+using TicketToRide.Services;
 
 namespace TicketToRide.Moves
 {
     public class ClaimRouteMove : Move
     {
-        public IList<Model.GameBoard.Route> Route { get; set; } = new List<Model.GameBoard.Route>();
+        public List<Model.GameBoard.Route> Route { get; set; } = new List<Model.GameBoard.Route>();
 
         public TrainColor ColorUsed { get; set; }
 
@@ -22,13 +23,13 @@ namespace TicketToRide.Moves
             this.Destination = destination;
         }
 
-        public ClaimRouteMove(int playerIndex, TrainColor colorUsed, Model.GameBoard.Route route)
+        public ClaimRouteMove(int playerIndex, TrainColor colorUsed, List<Model.GameBoard.Route> route)
     : base(playerIndex)
         {
             this.ColorUsed = colorUsed;
-            this.Origin = route.Origin;
-            this.Destination = route.Destination;
-            Route.Add(route);
+            this.Origin = route.ElementAt(0).Origin;
+            this.Destination = route.ElementAt(0).Destination;
+            Route.AddRange(route);
         }
 
 
