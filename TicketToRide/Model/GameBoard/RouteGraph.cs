@@ -1,4 +1,6 @@
-﻿using TicketToRide.Model.Cards;
+﻿using QuickGraph.Graphviz.Dot;
+using TicketToRide.Helpers;
+using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 
 namespace TicketToRide.Model.GameBoard
@@ -31,9 +33,24 @@ namespace TicketToRide.Model.GameBoard
 
         public void AddRoute(Route route)
         {
-            AddCity(route.Origin);
-            AddCity(route.Destination);
-            Edges.Add(new Edge(route));
+            var equivalentEdge = GetEquivalentEdge(route);
+
+            if (equivalentEdge != null)
+            {
+                equivalentEdge.Routes.Add(route);
+            }
+            else
+            {
+                AddCity(route.Origin);
+                AddCity(route.Destination);
+                Edges.Add(new Edge(new List<Route> { route }));
+            }
+        }
+
+        public Edge? GetEquivalentEdge(Route route)
+        {
+            return Edges
+                 .FirstOrDefault(e => e.Routes.Where(r => r.Origin == route.Origin && r.Destination == route.Destination).Any());
         }
 
         public List<Edge> GetEdges()
@@ -74,7 +91,7 @@ namespace TicketToRide.Model.GameBoard
 
         public bool ContainsRoute(Route route)
         {
-            return Edges.Where(e => e.Route == route).Any();
+            return Edges.Where(e => e.Routes.Contains(route)).Any();
         }
 
         public (int, List<Edge>) LongestContinuousPath()
@@ -124,29 +141,9 @@ namespace TicketToRide.Model.GameBoard
             return (maxLength, maxPathEdges);
         }
 
-        public void RemoveEdge(Route route)
-        {
-            // Find the edge to remove
-            var edgeToRemove = Edges.FirstOrDefault(e => (e.Route == route));
-
-            if (edgeToRemove != null)
-            {
-                // Remove the edge
-                Edges.Remove(edgeToRemove);
-            }
-        }
-
-        public void RemoveEdges(List<Route> routes)
-        {
-            foreach (var route in routes)
-            {
-                RemoveEdge(route);
-            }
-        }
-
         public List<Route> FindAllShortestPathsBetweenDestinationCards(
-            List<DestinationCard> destinationCards, 
-            PlayerColor playerColor, 
+            List<DestinationCard> destinationCards,
+            PlayerColor playerColor,
             BoardRouteCollection boardRouteCollection)
         {
             var routesInShortestPaths = new List<Route>();
@@ -158,11 +155,73 @@ namespace TicketToRide.Model.GameBoard
                 if (shortestDistance != int.MaxValue)
                 {
                     //the destination is reachable
-                    routesInShortestPaths.AddRange(shortestPath.Select(e => e.Route));
+                    routesInShortestPaths.AddRange(shortestPath.SelectMany(e => e.Routes));
                 }
             }
 
             return routesInShortestPaths.Distinct().ToList();
+        }
+
+        public List<Route> GetShortestPathConnectingAllCities(List<DestinationCard> destinationCards, PlayerColor playerColor, BoardRouteCollection boardRouteCollection)
+        {
+            if (destinationCards.Count == 0)
+            {
+                return [];
+            }
+
+            //get the main paths between the cities on the destination cards
+            var mainPaths = new List<Edge>();
+            {
+                for (int i = 0; i < destinationCards.Count; i++)
+                {
+                    var (distance, path) = FindShortestPath(destinationCards[i].Origin, destinationCards[i].Destination, playerColor, boardRouteCollection);
+
+                    if (distance != int.MaxValue)
+                    {
+                        mainPaths.AddRange(path);
+                    }
+                }
+            }
+
+            // Step 1: Compute interconnecting paths
+            var interconnectingPaths = new List<Edge>();
+            for (int i = 0; i < destinationCards.Count - 1; i++)
+            {
+                for (int j = i + 1; j < destinationCards.Count; j++)
+                {
+                    var (distanceAC, pathAC) = FindShortestPath(destinationCards[i].Origin, destinationCards[j].Origin, playerColor, boardRouteCollection);
+                    var (distanceAD, pathAD) = FindShortestPath(destinationCards[i].Origin, destinationCards[j].Destination, playerColor, boardRouteCollection);
+                    var (distanceBC, pathBC) = FindShortestPath(destinationCards[i].Destination, destinationCards[j].Origin, playerColor, boardRouteCollection);
+                    var (distanceBD, pathBD) = FindShortestPath(destinationCards[i].Destination, destinationCards[j].Destination, playerColor, boardRouteCollection);
+
+                    var shortestPath = new List<Edge>();
+                    if (distanceAC < distanceAD && distanceAC < distanceBC && distanceAC < distanceBD)
+                    {
+                        shortestPath = pathAC;
+                    }
+                    else if (distanceAD < distanceAC && distanceAD < distanceBC && distanceAD < distanceBD)
+                    {
+                        shortestPath = pathAD;
+                    }
+                    else if (distanceBC < distanceAC && distanceBC < distanceAD && distanceBC < distanceBD)
+                    {
+                        shortestPath = pathBC;
+                    }
+                    else
+                    {
+                        shortestPath = pathBD;
+                    }
+
+                    interconnectingPaths.AddRange(shortestPath);
+                }
+            }
+
+            // Step 2: Merge paths
+            var mergedPaths = mainPaths.Concat(interconnectingPaths).ToList();
+
+            // Step 3: Return unique routes
+            var uniqueRoutes = new HashSet<Route>(mergedPaths.SelectMany(p => p.Routes));
+            return uniqueRoutes.ToList();
         }
 
         public (int, List<Edge>) FindShortestPath(City startCity, City endCity, PlayerColor playerColor, BoardRouteCollection boardRouteCollection)
@@ -185,24 +244,22 @@ namespace TicketToRide.Model.GameBoard
 
                 foreach (var edge in Edges.Where(e =>
                 (e.Origin == currentCity || e.Destination == currentCity)
-                && (!e.Route.IsClaimed || e.Route.CanPlayerUseRoute(playerColor))))
+                && (e.CanPlayerUseEdge(playerColor) || e.CanBeClaimed())))
                 {
-                    if (edge.Route.IsClaimed || !boardRouteCollection.DoesEquivalentUsableRouteExist(edge.Route, playerColor))
+                    var relevantEdge = edge;
+                    if (edge.Routes.Count > 1)
                     {
-                        //if the route is claimed or unique, no other usable equivalent usable routes exists
-                        //meaning that the route is unique or it's double but claimed by other player
-
-                        var neighborCity = edge.Origin == currentCity ? edge.Destination : edge.Origin;
-                        int distance = currentDistance + edge.Cost;
-
-                        if (distance < distances[neighborCity])
-                        {
-                            distances[neighborCity] = distance;
-                            previousEdges[neighborCity] = edge;
-                            priorityQueue.Enqueue((neighborCity, distance), distance);
-                        }
+                        relevantEdge = edge.GetRelevantEdge(edge, playerColor);
                     }
 
+                    var neighborCity = edge.Origin == currentCity ? edge.Destination : edge.Origin;
+                    int distance = currentDistance + edge.Cost;
+                    if (distance < distances[neighborCity])
+                    {
+                        distances[neighborCity] = distance;
+                        previousEdges[neighborCity] = relevantEdge;
+                        priorityQueue.Enqueue((neighborCity, distance), distance);
+                    }
                 }
             }
 
@@ -254,22 +311,140 @@ namespace TicketToRide.Model.GameBoard
 
             return trainCardsDictionary;
         }
+
+        private List<Edge> ConstructMST(List<City> cities, List<Edge> allPaths)
+        {
+
+            var mstEdges = new List<Edge>();
+            var visitedCities = new HashSet<City>();
+            var remainingCities = new HashSet<City>(cities);
+            var priorityQueue = new PriorityQueue<Edge, int>();
+
+            // Start with an arbitrary city
+            var startCity = cities.First();
+            visitedCities.Add(startCity);
+            remainingCities.Remove(startCity);
+
+            // Add all edges incident to the start city to the priority queue
+            foreach (var edge in allPaths.Where(e => e.Origin == startCity || e.Destination == startCity))
+            {
+                priorityQueue.Enqueue(edge, edge.Cost);
+            }
+
+            // Build the MST iteratively
+            while (priorityQueue.Count > 0 && remainingCities.Count > 0)
+            {
+                var currentEdge = priorityQueue.Dequeue();
+                var nextCity = currentEdge.Origin == startCity ? currentEdge.Destination : currentEdge.Origin;
+
+                if (!visitedCities.Contains(nextCity))
+                {
+                    mstEdges.Add(currentEdge);
+                    visitedCities.Add(nextCity);
+                    remainingCities.Remove(nextCity);
+
+                    // Enqueue all edges incident to the newly visited city
+                    foreach (var edge in allPaths.Where(e => (e.Origin == nextCity || e.Destination == nextCity) &&
+                                                              (e.Origin != startCity && e.Destination != startCity)))
+                    {
+                        priorityQueue.Enqueue(edge, edge.Cost);
+                    }
+                }
+            }
+
+            return mstEdges;
+        }
+
+        // Helper method to select the minimum number of paths required to connect all cities
+        private List<Edge> SelectMinimumPaths(List<City> cities, List<Edge> mstEdges)
+        {
+            // Initialize a HashSet to keep track of visited cities
+            var visitedCities = new HashSet<City>();
+
+            // Initialize a list to store selected paths
+            var selectedPaths = new List<Edge>();
+
+            // Start with the first city in the MST
+            var startCity = mstEdges.First().Origin;
+            visitedCities.Add(startCity);
+
+            // Iterate through the MST edges
+            foreach (var edge in mstEdges)
+            {
+                // If the destination city of the current edge is not visited yet,
+                // add the edge to the selected paths and mark the destination city as visited
+                if (!visitedCities.Contains(edge.Destination))
+                {
+                    selectedPaths.Add(edge);
+                    visitedCities.Add(edge.Destination);
+                }
+            }
+
+            return selectedPaths;
+        }
     }
 
     public class Edge
     {
         public City Origin { get; set; }
         public City Destination { get; set; }
-        public Route Route { get; set; }
+       
+        public List<Route> Routes { get; set; }
 
         public int Cost { get; set; }
 
-        public Edge(Route route)
+        public Edge()
         {
-            Origin = route.Origin;
-            Destination = route.Destination;
-            Cost = route.Length;
-            Route = route;
+
+        }
+
+        public Edge(List<Route> route)
+        {
+            Origin = route.ElementAt(0).Origin;
+            Destination = route.ElementAt(0).Destination;
+            Cost = route.ElementAt(0).Length;
+            Routes = route;
+        }
+
+        public bool CanBeClaimed()
+        {
+            return Routes.Any(r => !r.IsClaimed);
+        }
+
+        public bool CanPlayerUseEdge(PlayerColor color)
+        {
+            return Routes.Any(r => r.CanPlayerUseRoute(color));
+        }
+
+        //given an edge with a double route, return the edge
+        //with only the relevant route, the claimed one or the one that can be claimed
+        public Edge GetRelevantEdge(Edge edge, PlayerColor playerColor)
+        {
+            var routes = new List<Route>();
+            foreach (var route in edge.Routes)
+            {
+                if (route.CanPlayerUseRoute(playerColor))
+                {
+                    routes.Add(route);
+                    break;
+                }
+            }
+
+            if (routes.Count == 1)//a usable route exists
+            {
+                return new Edge(routes);
+            }
+            //otherwise, there is no route that can be used, so get the first one that can be claimed
+            foreach (var route in edge.Routes)
+            {
+                if (route.IsClaimed == false)
+                {
+                    routes.Add(route);
+                    break;
+                }
+            }
+
+            return new Edge(routes);
         }
     }
 

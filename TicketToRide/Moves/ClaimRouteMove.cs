@@ -42,7 +42,7 @@ namespace TicketToRide.Moves
             var pointValue = Route.ElementAt(0).PointValue;
 
             //remove cards
-           ( var canRemoveCards, var cardsToDiscard) = player.RemoveCards(ColorUsed, length);
+            (var canRemoveCards, var cardsToDiscard) = player.RemoveCards(ColorUsed, length);
 
             if (!canRemoveCards)
             {
@@ -65,10 +65,11 @@ namespace TicketToRide.Moves
             game.Board.DiscardPile.AddRange(cardsToDiscard);
 
             player.AddCompletedRoute(Route.Where(r =>
-            r.Color == ColorUsed
+            (r.Color == ColorUsed
             || r.Color == TrainColor.Grey
             || ColorUsed == TrainColor.Locomotive)
-                .First());
+            && (r.ClaimedBy == player.Color))
+              .First());
 
             var newlyCompletedDestinations = player.GetNewlyCompletedDestinations();
 
@@ -80,7 +81,7 @@ namespace TicketToRide.Moves
                 Route.ElementAt(0).Origin.ToString(),
                 Route.ElementAt(0).Destination.ToString());
 
-            
+
             return new ClaimRouteResponse
             {
                 IsValid = true,

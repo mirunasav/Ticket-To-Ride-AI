@@ -31,6 +31,7 @@ export async function openCreateNewGameSweetAlert() {
                                 <option value="RandomDecisionBot">Random Decision Bot</option>
                                 <option value="PseudoRandomBot">Pseudo Random Bot</option>
                                 <option value="SimpleStrategyBot">Simple Strategy Bot</option>
+                                <option value="LongestRouteBot">Longest Route Bot</option>
                                 <option value="CardHoarderBot">Card Hoarder Bot</option>
                             </select>
                         `;

@@ -435,11 +435,9 @@ namespace TicketToRide.Services
 
             foreach (var route in routes)
             {
-                //get route list, in case it is a double route
-                var routeList = routeService.GetRoute(route.Origin, route.Destination);
 
                 //see whether they can be claimed
-                var canClaimRouteMove = new CanClaimRouteMove(playerIndex, routeList);
+                var canClaimRouteMove = new CanClaimRouteMove(playerIndex, new List<Model.GameBoard.Route> { route });
 
                 var canRouteBeClaimed = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove);
 
@@ -459,7 +457,7 @@ namespace TicketToRide.Services
                 {
                     foreach (var color in canClaimRouteResponse.TrainColorsWhichCanBeUsed)
                     {
-                        possibleClaimRouteMoves.Add(CreateClaimRouteMove(playerIndex, color, routeList));
+                        possibleClaimRouteMoves.Add(CreateClaimRouteMove(playerIndex, color, route));
                     }
                 }
             }
@@ -766,7 +764,7 @@ namespace TicketToRide.Services
                     game.GameLog.UpdateTrainCardsDeckStates(game);
                 }
 
-                if(game.GameState == GameState.Ended)
+                if (game.GameState == GameState.Ended)
                 {
                     game.GameLog.LogTrainCardsDeckStates();
                 }
@@ -816,10 +814,9 @@ namespace TicketToRide.Services
             }
         }
 
-        private ClaimRouteMove CreateClaimRouteMove(int playerIndex, TrainColor color, List<Model.GameBoard.Route> route)
+        private ClaimRouteMove CreateClaimRouteMove(int playerIndex, TrainColor color, Model.GameBoard.Route route)
         {
-            return new ClaimRouteMove(playerIndex, color, route);
-            //don't validate it, it's already valid
+            return new ClaimRouteMove(playerIndex, color, new List<Model.GameBoard.Route> { route });
         }
 
         private MakeMoveResponse RunReplayableGame(ReloadableGame reloadableGame)
@@ -844,13 +841,13 @@ namespace TicketToRide.Services
                 {
                     var move = reloadableGame.MoveSequence.First();
                     var newTrainCardsState = reloadableGame.TrainCardsStates.CardStates.First();
-                    
+
                     var moveResponse = move.Execute(game);
                     if (!moveResponse.IsValid)
                     {
                         return moveResponse;
                     }
-                   
+
                     //update game
                     game.Board.Deck = newTrainCardsState.Deck;
                     game.Board.FaceUpDeck = newTrainCardsState.FaceUpDeck;

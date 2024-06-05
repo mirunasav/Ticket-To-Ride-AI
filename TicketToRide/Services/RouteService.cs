@@ -71,6 +71,10 @@ namespace TicketToRide.Services
             return gameProvider.GetGame().Board.Routes.GetRoute(origin, destination);
         }
 
+        public Model.GameBoard.Route? GetRoute (Model.GameBoard.Route route)
+        {
+            return gameProvider.GetGame().Board.Routes.GetRoute(route);
+        }
         public bool IsRouteClaimed(IList<Model.GameBoard.Route> routeCollection, int numberOfPlayers)
         {
             //if the route is not double, just check if the first element of the collection 

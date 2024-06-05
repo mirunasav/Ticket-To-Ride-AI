@@ -168,6 +168,20 @@ namespace TicketToRide.Model.GameBoard
             return routesQuery.FirstOrDefault();
         }
 
+        public Route? GetRoute(Route route)
+        {
+            var key1 = new RouteOriginDestination(route.Origin, route.Destination);
+
+            var routeList = new List<Route>();
+
+            if (RouteDictionary.TryGetValue(key1, out List<Route>? value1))
+            {
+                routeList.AddRange(value1);
+            }
+
+            return routeList.FirstOrDefault(r => r.Equals(route));
+        }
+
         public bool DoesEquivalentUsableRouteExist(Route route, PlayerColor playerColor)
         {
             var routes = GetRoute(route.Origin, route.Destination);

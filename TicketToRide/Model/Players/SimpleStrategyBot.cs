@@ -85,7 +85,13 @@ namespace TicketToRide.Model.Players
                 {
                     //the cities are unreachable so there is no goal to work to.
                     //if the turn is less than 30 and the number of players is 2, get more tickets
-                    if(game.Players.Count < 3 && game.GameTurn <= 30)
+
+                    if(game.Players.Count == 2 && game.GameTurn <= 40)
+                    {
+                        return possibleMoves.DrawDestinationCardMove;
+                    }
+
+                    if (game.Players.Count == 3 && game.GameTurn <= 30)
                     {
                         return possibleMoves.DrawDestinationCardMove;
                     }
@@ -187,7 +193,7 @@ namespace TicketToRide.Model.Players
             return possibleMoves.DrawDestinationCardMove;
         }
 
-        private DestinationCard GetBestDestinationCard(List<DestinationCard> destinationCards, Game game)
+        protected DestinationCard GetBestDestinationCard(List<DestinationCard> destinationCards, Game game)
         {
             DestinationCard bestCard = null;
             var bestScore = 0.00;

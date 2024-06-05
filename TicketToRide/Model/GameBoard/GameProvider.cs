@@ -91,6 +91,8 @@ namespace TicketToRide.Model.GameBoard
                     return new PseudoRandomBot($"player{index + 1}", playerColor, index);
                 case PlayerType.SimpleStrategyBot:
                     return new SimpleStrategyBot($"player{index + 1}", playerColor, index, board.RouteGraph);
+                case PlayerType.LongestRouteBot:
+                    return new LongestRouteBot($"player{index + 1}", playerColor, index, board.RouteGraph);
                 case PlayerType.CardHoarderBot:
                     return new CardHoarderBot($"player{index + 1}", playerColor, index);
                 default:

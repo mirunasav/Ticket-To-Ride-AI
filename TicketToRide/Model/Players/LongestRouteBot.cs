@@ -54,7 +54,8 @@ namespace TicketToRide.Model.Players
                 return bestMove;
             }
 
-            var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(PendingDestinationCards, Color, game.Board.Routes);
+            
+            var shortestPathRoutes = GameRouteGraph.GetShortestPathConnectingAllCities(PendingDestinationCards, Color, game.Board.Routes);
 
             if (possibleMoves.ClaimRouteMoves.Count > 0)
             {
