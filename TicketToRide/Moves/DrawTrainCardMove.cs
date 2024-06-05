@@ -9,9 +9,13 @@ namespace TicketToRide.Moves
     public class DrawTrainCardMove : Move
     {
         public int faceUpCardIndex { get; set; } = 0;
-        public DrawTrainCardMove(int playerIndex, int faceUpCardIndex) : base(playerIndex)
+
+        public TrainColor CardColor { get; set; } = default;
+
+        public DrawTrainCardMove(int playerIndex, int faceUpCardIndex, TrainColor cardColor = default) : base(playerIndex)
         {
             this.faceUpCardIndex = faceUpCardIndex;
+            CardColor = cardColor;
         }
 
         public override MakeMoveResponse Execute(Game game)
@@ -25,7 +29,7 @@ namespace TicketToRide.Moves
                 var card = game.Board.FaceUpDeck.ElementAt(faceUpCardIndex);
                 game.Board.FaceUpDeck.Remove(card);
 
-                cardColor = card.Color.ToString();
+                CardColor = card.Color;
 
                 //add to player hand
                 game.GetPlayer(PlayerIndex).Hand.Add(card);
@@ -41,9 +45,11 @@ namespace TicketToRide.Moves
             else
             {
                 //take first card from deck
+                if(game.Board.Deck.Count == 0)
+                {
+                    game.Board.RefillDeck();
+                }
                 var card = game.Board.Deck.Pop(1);
-
-                cardColor = card[0].Color.ToString();
 
                 //add to player hand
                 game.GetPlayer(PlayerIndex).Hand.AddRange(card);
@@ -65,30 +71,11 @@ namespace TicketToRide.Moves
                 game.UpdateStateNextPlayerTurn();
             }
 
-            var gameLogMessage = CreateGameLogMessage(
-                game.GetPlayer(PlayerIndex).Name, 
-                cardColor,
-                faceUpCardIndex != -1);
-
-            LogMove(game.GameLog, gameLogMessage);
-           
             return new MakeMoveResponse
             {
                 IsValid = true,
                 Message = ValidMovesMessages.PlayerDrawTrainCard
             };
-        }
-
-        private string CreateGameLogMessage(string playerName, string trainColor, bool isFromFaceUpDeck)
-        {
-            if (isFromFaceUpDeck)
-            {
-                return $"{playerName} has drawn a {trainColor} card from the face up deck.";
-            }
-            else
-            {
-                return $"{playerName} has drawn a card from the face down deck.";
-            }
         }
 
         private GameState UpdateGameState(Game game, bool isTurnFinished = false)

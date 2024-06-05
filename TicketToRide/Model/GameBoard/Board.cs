@@ -7,6 +7,8 @@ namespace TicketToRide.Model.GameBoard
     {
         public BoardRouteCollection Routes { get; set; } = new BoardRouteCollection();
 
+        public RouteGraph RouteGraph { get; set; }
+
         public List<DestinationCard> DestinationCards { get; set; } = new List<DestinationCard>();
 
         public List<TrainCard> Deck { get; set; } = new List<TrainCard>();
@@ -18,6 +20,7 @@ namespace TicketToRide.Model.GameBoard
         public Board()
         {
             CreateRoutes();
+            CreateRouteGraph();
             CreateDestinationCards();
             CreateTrainCardDeck();
             SetupBoard();
@@ -66,8 +69,6 @@ namespace TicketToRide.Model.GameBoard
             Routes.AddRoute(City.SaltLakeCity, City.Denver, TrainColor.Red, 3);
             Routes.AddRoute(City.SaltLakeCity, City.Denver, TrainColor.Yellow, 3);
             Routes.AddRoute(City.Helena, City.Omaha, TrainColor.Red, 5);
-            Routes.AddRoute(City.Omaha, City.Duluth, TrainColor.Grey, 2);
-            Routes.AddRoute(City.Omaha, City.Duluth, TrainColor.Grey, 2);
             Routes.AddRoute(City.Duluth, City.Chicago, TrainColor.Red, 3);
             Routes.AddRoute(City.Omaha, City.Chicago, TrainColor.Blue, 4);
             Routes.AddRoute(City.Chicago, City.Toronto, TrainColor.White, 4);
@@ -137,6 +138,11 @@ namespace TicketToRide.Model.GameBoard
             Routes.AddRoute(City.Omaha, City.Denver, TrainColor.Purple, 4);
         }
 
+        private void CreateRouteGraph()
+        {
+           RouteGraph = new RouteGraph(Routes.Routes);
+        }
+       
         private void CreateDestinationCards()
         {
             DestinationCards.Add(new DestinationCard(City.NewYork, City.Atlanta, 6));
@@ -261,11 +267,11 @@ namespace TicketToRide.Model.GameBoard
         }
 
         //when there are no more cards to be drawn, refill the deck
-        private void RefillDeck()
+        public void RefillDeck()
         {
             if (DiscardPile.Count > 0)
             {
-                var cards = DiscardPile;
+                var cards = new List<TrainCard>(DiscardPile);
                 cards.AddRange(Deck);
 
                 cards.Shuffle();

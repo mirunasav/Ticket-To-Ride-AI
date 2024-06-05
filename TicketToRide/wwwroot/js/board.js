@@ -42,7 +42,9 @@ export function drawBoard() {
         drawCityCircle(city, selectedCities.includes(city), hoveredCityNames.includes(city.name));
     }
     for (const route of claimedRoutes) {
-        drawClaimedRoute(route);
+        console.log(claimedRoutes)
+        let result = isDoubleRoute(route, claimedRoutes);
+        drawClaimedRoute(route, result.isRouteDouble, result.isSecondRoute);
     }
 }
 
@@ -71,7 +73,7 @@ function handleClick() {
 function drawCityCircle(city, isSelected = false, isDestinationHovered = false) {
     let d = dist(mouseX, mouseY, city.x, city.y);
     // If the mouse is over the ellipse, change its color
-    if(isDestinationHovered){
+    if (isDestinationHovered) {
         fill(0, 0, 0);
     }
     else if (isSelected) {
@@ -86,9 +88,64 @@ function drawCityCircle(city, isSelected = false, isDestinationHovered = false) 
     ellipse(city.x, city.y, 10, 10);
 }
 
-function drawClaimedRoute(route) {
-    let point1 = createVector(route.origin.x, route.origin.y);
-    let point2 = createVector(route.destination.x, route.destination.y);
+function isDoubleRoute(route, claimedRoutes) {
+    let firstIndex = claimedRoutes.indexOf(route);
+    let secondIndex = -1;
+    let isRouteDouble = false;
+    let isSecondRoute = false;
+
+    for (let i = 0; i < claimedRoutes.length; i++) {
+        if (i !== firstIndex &&
+            claimedRoutes[i].destination === route.destination &&
+            claimedRoutes[i].origin === route.origin) {
+            secondIndex = i;
+            break;
+        }
+    }
+
+    if (secondIndex != -1) {
+        isRouteDouble = true;
+    }
+
+    if (secondIndex != -1 && secondIndex < firstIndex) {
+        isSecondRoute = true;
+    }
+    return { isRouteDouble, isSecondRoute };
+}
+
+function drawClaimedRoute(route, isRouteDouble, isSecondRoute) {
+    let point1 = 0;
+    let point2 = 0;
+    if (!isRouteDouble) {
+        point1 = createVector(route.origin.x, route.origin.y);
+        point2 = createVector(route.destination.x, route.destination.y);
+    }
+    else {
+        //route is double
+        let offSet = 4;
+        if (Math.abs(route.origin.x - route.destination.x) < 20) {
+            if (isSecondRoute) {
+                point1 = createVector(route.origin.x + offSet, route.origin.y);
+                point2 = createVector(route.destination.x + offSet, route.destination.y);
+            }
+            else {
+                point1 = createVector(route.origin.x - offSet, route.origin.y);
+                point2 = createVector(route.destination.x - offSet, route.destination.y);
+            }
+        }
+        else{
+            //the difference is between y
+            if (isSecondRoute) {
+                point1 = createVector(route.origin.x , route.origin.y + offSet);
+                point2 = createVector(route.destination.x , route.destination.y + offSet);
+            }
+            else {
+                point1 = createVector(route.origin.x, route.origin.y - offSet);
+                point2 = createVector(route.destination.x, route.destination.y - offSet);
+            }
+        }
+
+    }
 
     changeStroke(route.claimedBy)
 
@@ -195,10 +252,10 @@ function changeStroke(playerColor) {
             stroke(255, 0, 0);
             return;
         case PlayerColor.Green:
-            stroke(0, 255, 0);
+            stroke(0, 110, 0);
             return;
         case PlayerColor.Yellow:
-            stroke(0, 255, 255);
+            stroke(255, 255, 0);
             return;
         default:
             stroke(0, 0, 0);

@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography.Xml;
-
-namespace TicketToRide.Moves
+﻿namespace TicketToRide.Moves
 {
     public class PossibleMoves
     {
@@ -14,22 +12,36 @@ namespace TicketToRide.Moves
 
         public int AllPossibleMovesCount { get; set; }
 
+        public bool CanDestinationCardBeTheOnlyMove {  get; set; }
+
         public PossibleMoves(
             List<DrawTrainCardMove> drawTrainCards,
             List<ClaimRouteMove> claimRoutes,
             DrawDestinationCardMove? drawDestinationCard,
-            List<ChooseDestinationCardMove> chooseDestinationCardMoves)
+            List<ChooseDestinationCardMove> chooseDestinationCardMoves,
+            bool canDestinationCardBeTheOnlyMove = false)
         { 
             DrawTrainCardMoves = drawTrainCards;
             ClaimRouteMoves = claimRoutes;
             DrawDestinationCardMove = drawDestinationCard;
             ChooseDestinationCardMoves = chooseDestinationCardMoves;
+            CanDestinationCardBeTheOnlyMove = canDestinationCardBeTheOnlyMove;
 
             AllPossibleMovesCount = drawTrainCards.Count + claimRoutes.Count + chooseDestinationCardMoves.Count;
 
-            if (drawDestinationCard != null && (drawTrainCards.Count != 0 || claimRoutes.Count != 0))
+            if (drawDestinationCard != null) 
             {
-                AllPossibleMovesCount++;
+                if(canDestinationCardBeTheOnlyMove)
+                {
+                    AllPossibleMovesCount++;
+                }
+                else
+                {
+                    if (drawTrainCards.Count != 0 || claimRoutes.Count != 0)
+                    {
+                        AllPossibleMovesCount++;
+                    }
+                }
             }
         }
 
@@ -57,9 +69,16 @@ namespace TicketToRide.Moves
                 allMoves.Add(claimRouteMove);
             }
 
-            if(DrawDestinationCardMove != null && ( DrawTrainCardMoves.Count != 0 || ClaimRouteMoves.Count != 0))
+            if(DrawDestinationCardMove != null)
             {
-               allMoves.Add(DrawDestinationCardMove);
+                if(CanDestinationCardBeTheOnlyMove)
+                {
+                    allMoves.Add(DrawDestinationCardMove);
+                }
+                else if (DrawTrainCardMoves.Count != 0 || ClaimRouteMoves.Count != 0)
+                {
+                    allMoves.Add(DrawDestinationCardMove);
+                }
             }
 
             return allMoves;

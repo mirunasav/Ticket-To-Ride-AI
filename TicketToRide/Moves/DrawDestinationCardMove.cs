@@ -14,17 +14,19 @@ namespace TicketToRide.Moves
         {
             var destinationCards = game.Board.DestinationCards.Take(3).ToList();
 
-            foreach(var card in destinationCards)
+            foreach (var card in destinationCards)
             {
                 card.IsWaitingToBeChosen = true;
             }
 
-            //Game.GetPlayer(playerIndex).PendingDestinationCards.AddRange(destinationCards);
-
-            game.GameState = Model.Enums.GameState.ChoosingDestinationCards;
-
-            var gameLogMessage = CreateGameLogMessage(game.Players.ElementAt(PlayerIndex).Name);
-            LogMove(game.GameLog, gameLogMessage);
+            if (game.GameState == Model.Enums.GameState.DrawingFirstDestinationCards)
+            {
+                game.GameState = Model.Enums.GameState.ChoosingFirstDestinationCards;
+            }
+            else
+            {
+                game.GameState = Model.Enums.GameState.ChoosingDestinationCards;
+            }
 
             return new DrawDestinationCardsResponse
             {
@@ -34,9 +36,5 @@ namespace TicketToRide.Moves
             };
         }
 
-        private string CreateGameLogMessage(string playerName)
-        {
-            return $"{playerName} has drawn destination cards.";
-        }
     }
 }

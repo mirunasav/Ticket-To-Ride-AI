@@ -29,11 +29,16 @@ namespace TicketToRide.Model.Players
 
         public int NumberOfCompletedDestinationCards { get; set;}
 
-        public RouteGraph ClaimedRoutes { get; private set; }
+        public RouteGraph ClaimedRoutes { get; private set; } = new RouteGraph();
 
         public bool IsBot { get; set; } = false;
 
         //private Dictionary<PlayerActions, Action> ActionMap { get; set; }
+
+        public Player()
+        {
+
+        }
 
         public Player(string name, PlayerColor color, int index)
         {
@@ -42,20 +47,7 @@ namespace TicketToRide.Model.Players
             ClaimedRoutes = new RouteGraph();
             PlayerIndex = index;
         }
-
-        //for now : draw 2 cards from the hidden deck
-        public void Act(PlayerActions action, Board board)
-        {
-            switch (action)
-            {
-                case PlayerActions.DrawTrainCard:
-                    DrawTrainCard(board);
-                    break;
-                default:
-                    break;
-            }
-        }
-
+       
         public int GetLocomotiveCount()
         {
            return Hand.Count(card => card.Color == TrainColor.Locomotive);
@@ -66,15 +58,16 @@ namespace TicketToRide.Model.Players
             return Hand.Where(card => card.Color == color).Count();
         }
 
-        public bool RemoveCards(TrainColor color, int count)
+        public (bool hasCards, List<TrainCard> cardsToDiscard) RemoveCards(TrainColor color, int count)
         {
+            var cardsToDiscard = new List<TrainCard>();
             var cardsOfColor = GetCardsOfColor(color);
             var locomotiveCount = GetLocomotiveCount();
             cardsOfColor += locomotiveCount;
            
             if(cardsOfColor < count)
             {
-                return false;
+                return (false, cardsToDiscard);
             }
 
             var removedCardCount  = 0;
@@ -97,6 +90,8 @@ namespace TicketToRide.Model.Players
 
             for (int i = indicesToRemove.Count - 1; i >= 0; i--)
             {
+                var card = Hand.ElementAt(indicesToRemove[i]);
+                cardsToDiscard.Add(card);
                 Hand.RemoveAt(indicesToRemove[i]);
             }
 
@@ -123,11 +118,13 @@ namespace TicketToRide.Model.Players
 
                 for (int i = indicesToRemove.Count - 1; i >= 0; i--)
                 {
+                    var card = Hand.ElementAt(indicesToRemove[i]);
+                    cardsToDiscard.Add(card);
                     Hand.RemoveAt(indicesToRemove[i]);
                 }
             }
 
-            return true;
+            return (true, cardsToDiscard);
         }
 
         public Player GetHiddenStatisticsPlayer()
@@ -143,6 +140,7 @@ namespace TicketToRide.Model.Players
 
             return hiddentStatsPlayer;
         }
+
         public void AddCompletedRoute(Route route)
         {
             if (route.IsClaimed && route.ClaimedBy == Color)
@@ -178,10 +176,24 @@ namespace TicketToRide.Model.Players
 
             return newlyCompletedDestinations;
         }
-        private void DrawTrainCard(Board board)
+
+        public Dictionary<TrainColor, int> GroupedTrainColors()
         {
-            var cards = board.Deck.Pop(2);
-            Hand.AddRange(cards);
+            Dictionary<TrainColor, int> colorCounts = [];
+
+            foreach(var card in Hand)
+            {
+                if (colorCounts.ContainsKey(card.Color))
+                {
+                    colorCounts[card.Color] += 1;
+                }
+                else
+                {
+                    colorCounts[card.Color] = 1;
+                }
+            }
+
+            return colorCounts;
         }
 
     }

@@ -35,12 +35,27 @@ namespace TicketToRide.Model.GameBoard
             set { value = Length; }
         }
 
+        public Route()
+        {
+
+        }
+
         public Route(City Origin, City Destination, TrainColor TrainColor, int Length)
         {
             this.Origin = Origin;
             this.Destination = Destination;
             this.Color = TrainColor;
             this.Length = Length;
+        }
+
+        public bool CanPlayerUseRoute(PlayerColor playerColor)
+        {
+            if (IsClaimed && ClaimedBy == playerColor)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public override bool Equals(object obj)

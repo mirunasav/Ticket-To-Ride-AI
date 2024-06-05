@@ -82,9 +82,19 @@ namespace TicketToRide.Services
 
             //else, check if any of the routes is claimed and the game has more than 3 players
 
-            var numberOfClaimedRoutes = routeCollection.Where(r => r.IsClaimed).Count();
+            var claimedRoutes = routeCollection.Where(r => r.IsClaimed).ToList();
+            
+            foreach(var claimedRoute in claimedRoutes)
+            {
+                routeCollection.Remove(claimedRoute);
+            }
 
-            if (numberOfClaimedRoutes == 1 && numberOfPlayers < GameConstants.MinNumberOfPlayersForWhichDoubleRoutesCanBeUsed)
+            if (claimedRoutes.Count == 1 && numberOfPlayers < GameConstants.MinNumberOfPlayersForWhichDoubleRoutesCanBeUsed)
+            {
+                return true;
+            }
+
+            if(claimedRoutes.Count == 2 && numberOfPlayers >= GameConstants.MinNumberOfPlayersForWhichDoubleRoutesCanBeUsed)
             {
                 return true;
             }

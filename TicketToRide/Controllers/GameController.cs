@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration.EnvironmentVariables;
+using System.Text.Json;
 using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
 using TicketToRide.Model.Constants;
@@ -48,7 +50,6 @@ namespace TicketToRide.Controllers
                     }
                     playerTypes.Add(playerType);
                 }
-
             }
             else
             {
@@ -97,6 +98,112 @@ namespace TicketToRide.Controllers
             }
 
             return Json(game);
+        }
+
+        [HttpGet]
+        public IActionResult LoadGameForReplay([FromQuery] string guid)
+        {
+            //get path
+            string initialGameStatePath = GameConstants.InitialGameStatesDirectoryPath; // Replace with your actual directory path
+            string gameLogPath = GameConstants.GameLogDirectoryPath;
+            string trainCardDeckPath = GameConstants.TrainCardsStatesDirectoryPath;
+
+            string gameStateFileName = $"GameState{guid}.json";
+
+            string gameLogFileName = $"GameLog{guid}.txt";
+
+            string trainCardDeckFileName = $"TrainCardsStates{guid}.json";
+
+            // Combine the directory path with the filename to get the full file path
+            string initialGameFilePath = Path.Combine(initialGameStatePath, gameStateFileName);
+            string gameLogFilePath = Path.Combine(gameLogPath, gameLogFileName);
+            string trainCardDeckFilePath = Path.Combine(trainCardDeckPath, trainCardDeckFileName);
+
+            if (!System.IO.File.Exists(initialGameFilePath))
+            {
+                return NotFound($"The file {initialGameFilePath} does not exist.");
+            }
+
+
+            if (!System.IO.File.Exists(gameLogFilePath))
+            {
+                return NotFound($"The file {gameLogFilePath} does not exist.");
+            }
+
+            if (!System.IO.File.Exists(trainCardDeckFilePath))
+            {
+                return NotFound($"The file {trainCardDeckFilePath} does not exist.");
+            }
+
+            var reloadableGame = gameService.PrepGameForReplay(initialGameFilePath, gameLogFilePath, trainCardDeckFilePath);
+
+            return Json(reloadableGame.Game);
+        }
+
+        [HttpGet]
+        public IActionResult MakeNextMove()
+        {
+            var response = gameService.MakeNextMove();
+
+            if (response.IsValid)
+            {
+                return Json(gameService.GetGameInstance());
+            }
+
+            return BadRequest();
+        }
+
+        [HttpGet]
+        public IActionResult Replay([FromQuery] string guid)
+        {
+            //get path
+            string initialGameStatePath = GameConstants.InitialGameStatesDirectoryPath; // Replace with your actual directory path
+            string gameLogPath = GameConstants.GameLogDirectoryPath;
+            string trainCardDeckPath = GameConstants.TrainCardsStatesDirectoryPath;
+
+            string gameStateFileName = $"GameState{guid}.json";
+
+            string gameLogFileName = $"GameLog{guid}.txt";
+
+            string trainCardDeckFileName = $"TrainCardsStates{guid}.json";
+
+            // Combine the directory path with the filename to get the full file path
+            string initialGameFilePath = Path.Combine(initialGameStatePath, gameStateFileName);
+            string gameLogFilePath = Path.Combine(gameLogPath, gameLogFileName);
+            string trainCardDeckFilePath = Path.Combine(trainCardDeckPath, trainCardDeckFileName);
+
+            if (!System.IO.File.Exists(initialGameFilePath))
+            {
+                return NotFound($"The file {initialGameFilePath} does not exist.");
+            }
+
+
+            if (!System.IO.File.Exists(gameLogFilePath))
+            {
+                return NotFound($"The file {gameLogFilePath} does not exist.");
+            }
+
+            if (!System.IO.File.Exists(trainCardDeckFilePath))
+            {
+                return NotFound($"The file {trainCardDeckFilePath} does not exist.");
+            }
+
+            var gameResult = gameService.Replay(initialGameFilePath, gameLogFilePath, trainCardDeckFilePath);
+
+            if (gameResult is RunGameResponse response)
+            {
+                return Json(new
+                {
+                    gameLogFileName = response.GameLogFile,
+                    initialGameStateFileName = response.InitialGameStateFile,
+                    trainCardDeckStatesFileName = response.TrainCardDeckStatesFileName,
+                    winners = response.Winners,
+                    players = response.Players,
+                    longestContPathLength = response.LongestContPathLength,
+                    longestContPathPlayerIndex = response.LongestContPathPlayerIndex
+                });
+            }
+            return Ok();
         }
 
         [HttpGet]
@@ -356,6 +463,9 @@ namespace TicketToRide.Controllers
             {
                 return Json(new
                 {
+                    gameLogFileName = response.GameLogFile,
+                    initialGameStateFileName = response.InitialGameStateFile,
+                    trainCardDeckStatesFileName = response.TrainCardDeckStatesFileName,
                     winners = response.Winners,
                     players = response.Players,
                     longestContPathLength = response.LongestContPathLength,
@@ -438,7 +548,13 @@ namespace TicketToRide.Controllers
                             numberOfGamesWonByEachPlayer[playerIndex] = 1;
                         }
                     }
+
+                    gameSummaryResponse.TrainCardDeckStatesFileName = response.TrainCardDeckStatesFileName;
+                    gameSummaryResponse.InitialGameStateFileName = response.InitialGameStateFile;
+                    gameSummaryResponse.GameLogFileName = response.GameLogFile;
                     gameSummaryResponse.Players = response.Players;
+                    gameSummaryResponse.LongestContPathLength = response.LongestContPathLength;
+                    gameSummaryResponse.LongestContPathPlayerIndex  = response.LongestContPathPlayerIndex;
                     gameSummaries.GameSummaries.Add(gameSummaryResponse);
                 }
             }

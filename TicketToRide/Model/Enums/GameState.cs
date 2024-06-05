@@ -8,6 +8,8 @@
         //when the player is trying to figure out which routes he can claim
         DecidingAction,
         ChoosingDestinationCards,
-        Ended
+        Ended,
+        DrawingFirstDestinationCards,
+        ChoosingFirstDestinationCards
     }
 }

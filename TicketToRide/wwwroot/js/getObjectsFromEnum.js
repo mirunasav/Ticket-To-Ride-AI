@@ -19,23 +19,23 @@ export function getPlayerColorFromNumber(colorNumber) {
 
 export function getTrainColorFromNumber(colorNumber) {
     switch (colorNumber) {
-        case 0:
-            return TrainColor.Red;
         case 1:
-            return TrainColor.Orange;
+            return TrainColor.Red;
         case 2:
-            return TrainColor.Yellow;
+            return TrainColor.Orange;
         case 3:
-            return TrainColor.Green;
+            return TrainColor.Yellow;
         case 4:
-            return TrainColor.Blue;
+            return TrainColor.Green;
         case 5:
-            return TrainColor.Purple;
+            return TrainColor.Blue;
         case 6:
-            return TrainColor.Black;
+            return TrainColor.Purple;
         case 7:
-            return TrainColor.White;
+            return TrainColor.Black;
         case 8:
+            return TrainColor.White;
+        case 9:
             return TrainColor.Locomotive;
         default:
             return null; // or any default color
@@ -67,6 +67,10 @@ export function getGameStateFromNumber(gameStateNumber) {
             return GameState.ChoosingDestinationCards;
         case 4:
             return GameState.Ended;
+        case 5:
+            return GameState.DrawingFirstDestinationCards;
+        case 6:
+            return GameState.ChoosingFirstDestinationCards;
         default:
             return null;
     }

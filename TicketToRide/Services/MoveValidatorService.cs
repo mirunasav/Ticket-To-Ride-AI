@@ -35,6 +35,16 @@ namespace TicketToRide.Services
                 };
             }
 
+            if (drawTrainCardMove.faceUpCardIndex != -1
+               && game.Board.FaceUpDeck.ElementAt(drawTrainCardMove.faceUpCardIndex).IsAvailable)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = true,
+                    Message = ValidMovesMessages.ValidMove
+                };
+            }
+
             if (game.Board.Deck.Where(c => c.IsAvailable).Count() + game.Board.DiscardPile.Count < 2)
             {
                 return new MakeMoveResponse

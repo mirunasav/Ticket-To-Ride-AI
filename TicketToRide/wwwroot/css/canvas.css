@@ -57,24 +57,30 @@ body::before {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin-top: 10px;
-    margin: 0 auto; 
+    margin: 10px auto; 
 }
 
 #messages-container__player-turn-message {
     text-align: center;
+    margin-bottom:10px;
 }
 
 #messages-container__error-message {
     text-align: center;
-    color: red;
+    color: white;
     font-weight: bold;
+    margin-top:10px;
+}
+
+#messages-container__waiting-message {
+    margin-bottom:10px;
 }
 
 #messages-container__information-message {
     text-align: center;
     color: green;
     font-weight: bold;
+    margin-top:10px;
 }
 
 #choose-destination-cards-container {
@@ -115,6 +121,8 @@ body::before {
     flex-direction: column;
     text-align: left;
     margin-inline: 5px;
+    
+    padding: 10px;
 }
 
 #possible-destinations-list span {

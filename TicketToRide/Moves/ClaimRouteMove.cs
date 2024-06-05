@@ -15,6 +15,7 @@ namespace TicketToRide.Moves
         public City Origin { get; set; }
 
         public City Destination { get; set; }
+
         public ClaimRouteMove(int playerIndex, TrainColor colorUsed, City origin, City destination)
             : base(playerIndex)
         {
@@ -41,9 +42,9 @@ namespace TicketToRide.Moves
             var pointValue = Route.ElementAt(0).PointValue;
 
             //remove cards
-            var removedCards = player.RemoveCards(ColorUsed, length);
+           ( var canRemoveCards, var cardsToDiscard) = player.RemoveCards(ColorUsed, length);
 
-            if (!removedCards)
+            if (!canRemoveCards)
             {
                 return new MakeMoveResponse
                 {
@@ -61,6 +62,8 @@ namespace TicketToRide.Moves
             //mark route as claimed
             game.MarkRouteAsClaimed(Route.ElementAt(0).Origin, Route.ElementAt(0).Destination, player, ColorUsed);
 
+            game.Board.DiscardPile.AddRange(cardsToDiscard);
+
             player.AddCompletedRoute(Route.Where(r =>
             r.Color == ColorUsed
             || r.Color == TrainColor.Grey
@@ -76,8 +79,8 @@ namespace TicketToRide.Moves
                 game.Players.ElementAt(PlayerIndex).Name,
                 Route.ElementAt(0).Origin.ToString(),
                 Route.ElementAt(0).Destination.ToString());
-            LogMove(game.GameLog, gameLogMessage);
 
+            
             return new ClaimRouteResponse
             {
                 IsValid = true,
@@ -89,7 +92,7 @@ namespace TicketToRide.Moves
 
         private string CreateGameLogMessage(string playerName, string originCity, string destinationCity)
         {
-            return $"{playerName} has claimed a route from {originCity} to {destinationCity}.";
+            return $"{playerName} has claimed a route from {originCity} to {destinationCity} using {ColorUsed}.";
         }
 
     }

@@ -1,4 +1,4 @@
-﻿namespace TicketToRide.Model
+﻿namespace TicketToRide.Controllers.GameLog
 {
     public class GameLogLine
     {

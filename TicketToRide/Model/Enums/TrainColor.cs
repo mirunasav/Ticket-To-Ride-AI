@@ -2,6 +2,7 @@
 {
     public enum TrainColor
     {
+        None,
         Red,
         Orange,
         Yellow,

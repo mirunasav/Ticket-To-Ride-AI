@@ -5,6 +5,12 @@ namespace TicketToRide.Controllers.Responses
 {
     public class RunGameResponse : MakeMoveResponse
     {
+        public string GameLogFile { get; set; }
+
+        public string InitialGameStateFile { get; set; }
+
+        public string TrainCardDeckStatesFileName { get; set; }
+
         public List<Player> Players { get; set; }
 
         public List<Player> Winners { get; set; }
@@ -14,6 +20,9 @@ namespace TicketToRide.Controllers.Responses
         public int LongestContPathPlayerIndex { get; set; }
 
         public RunGameResponse(
+            string gameLogFile,
+            string initialGameStateFile,
+            string trainCardDeckStatesFileName,
             bool isValid,
             string message,
             List<Player> players, 
@@ -21,6 +30,9 @@ namespace TicketToRide.Controllers.Responses
             int longestContPathLength, 
             int longestContPathPlayerIndex)
         {
+            InitialGameStateFile = initialGameStateFile;
+            GameLogFile = gameLogFile;
+            TrainCardDeckStatesFileName = trainCardDeckStatesFileName;
             IsValid = isValid;
             Message = message;
             Players = players;

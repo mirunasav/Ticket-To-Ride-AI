@@ -10,10 +10,12 @@ import { getExistingGameRequest, getNewGameRequest } from "./getGameRequest.js";
 import { getGameStateRequest } from "./getGameStateRequest.js";
 import { getCityFromNumber, getGameStateFromNumber } from "./getObjectsFromEnum.js";
 import { makeBotMoveRequest } from "./makeBotMoveRequest.js";
+import { makeNextMoveRequest } from "./makeNextMoveRequest.js";
 import { initDisplayPlayerStatistics } from "./playerStatistics.js";
 import { displayFaceUpDeckImages, displayPlayerTrainCards, preloadTrainCardImages } from "./trainCardsDeck.js";
-import { emptyHtmlContainer } from "./utils.js";
+import { delay, emptyHtmlContainer } from "./utils.js";
 
+let isGameAReplay = false;
 export let playerTurn;
 export let players = [];
 
@@ -29,12 +31,18 @@ export let claimedRoutes = [];
 export let gameInstance = {};
 
 export let playerIndex = getPlayerIndex();
+
+await shouldReplayGame();
+
 export let currentPlayer;
 
 export let hasGameEnded = false;
 
 let displayingGameResults = false;
 let hasMadeRequest = false;
+let updateGameStateInProgress = false;
+let intervalId; // To keep track of the interval ID
+
 
 let numberOfPlayers;
 let playerTypes = [];
@@ -47,6 +55,19 @@ const mainContainer = document.getElementById('main-container');
 addButtonEventListeners();
 preInitGame();
 
+async function shouldReplayGame() {
+    let guid = getGUID();
+    if (guid) {
+        //should replay game
+        isGameAReplay = true;
+        let url = `http://localhost:5001/game/LoadGameForReplay?guid=${guid}`;
+        let result = await fetch(url);
+        if (!result.ok) {
+            let error = await result.text();
+            console.error(error);
+        }
+    }
+}
 
 async function preInitGame() {
     let isGameLoaded = false;
@@ -130,11 +151,21 @@ async function displayGame(exists = true) {
         initGameVariables(responseJson);
         initFaceUpDeck(faceUpDeck);
         initPlayerCardDeck(playerIndex)
-        initPlayerDestinationCards(playerIndex);
         initPlayerStatistics(playerIndex);
         initMessagesContainer(playerTurn, playerIndex);
         initGameLog(responseJson.gameLog)
-        setInterval(updateGameState, 2000);
+        await initPlayerDestinationCards(playerIndex);
+      
+        if (!intervalId) {
+            intervalId = setInterval(async () => {
+                if (!updateGameStateInProgress) {
+                    updateGameStateInProgress = true;
+                    await updateGameState();
+                    updateGameStateInProgress = false;
+                }
+            }, 100);
+        }
+
         if (!exists) {
             changeVisibilities(false)
         }
@@ -152,6 +183,7 @@ function initGameVariables(game) {
     destinationCardsDeck = [];
     players = [];
     routes = [];
+    isGameAReplay = game.isGameAReplay;
 
     console.log(game);
     for (const card of game.board.deck) {
@@ -228,15 +260,24 @@ function initPlayerCardDeck(playerIndex) {
     displayPlayerTrainCards(players[playerIndex].hand)
 }
 
-function initPlayerDestinationCards(playerIndex) {
-    displayPlayerDestinationCards(players[playerIndex]);
+async function initPlayerDestinationCards(playerIndex) {
+    if (players[playerIndex].isBot == false
+        && gameState == GameState.DrawingFirstDestinationCards
+        && (players[playerIndex].pendingDestinationCards.length == 0
+            || players[playerIndex].pendingDestinationCards == null)) {
+        await drawDestinationCardsRequest();
+        displayPlayerDestinationCards(players[playerIndex]);
+    }
+    else {
+        displayPlayerDestinationCards(players[playerIndex]);
+    }
 }
 
 function initPlayerStatistics(playerIndex) {
     initDisplayPlayerStatistics(players, playerIndex);
 }
 
-function initGameLog(gameLog){
+function initGameLog(gameLog) {
     displayGameLog(gameLog);
 }
 
@@ -258,7 +299,9 @@ export function initMessagesContainer(playerTurn, playerIndex) {
     }
     else {
         playerWaitingContainer.style.display = 'none';
-        if (gameState !== GameState.ChoosingDestinationCards) {
+        if (gameState !== GameState.ChoosingDestinationCards
+            && gameState !== GameState.ChoosingFirstDestinationCards
+        ) {
             playerTurnContainer.style.display = 'flex';
         }
     }
@@ -274,6 +317,18 @@ function getPlayerIndex() {
     const playerIndex = params.get("playerIndex");
     if (playerIndex) {
         return playerIndex;
+    }
+    else {
+        return 0;
+    }
+}
+
+function getGUID() {
+    const queryString = window.location.search;
+    const params = new URLSearchParams(queryString);
+    const guid = params.get("guid");
+    if (guid) {
+        return guid;
     }
     else {
         return 0;
@@ -339,9 +394,7 @@ async function drawDestinationCardsRequest() {
     });
     if (response.ok) {
         const responseJson = await response.json();
-        console.log(responseJson)
         displayDestinationCards(responseJson.drawnDestinationCards);
-        console.log(responseJson)
     }
     else {
         const errorText = await response.text();
@@ -404,7 +457,10 @@ function checkCheckboxes() {
 
 export async function updateGameState() {
     try {
-        if (!hasGameEnded) {
+        if (isGameAReplay && !hasGameEnded && playerIndex == 0) {
+            updateReplayGameState();
+        }
+        else if (!hasGameEnded) {
             let updatedGameState = await getGameStateRequest();
             let oldGameState = gameState;
             let oldPlayerTurn = playerTurn;
@@ -415,7 +471,8 @@ export async function updateGameState() {
 
             if (playerTurn == playerIndex
                 && currentPlayer.isBot
-                && hasMadeRequest == false) {
+                && hasMadeRequest == false
+                && !isGameAReplay) {
                 //get next move if the game is not ended and it's the bot's turn
                 hasMadeRequest = true;
                 await makeBotMoveRequest(playerIndex);
@@ -441,6 +498,21 @@ export async function updateGameState() {
     }
 }
 
+async function updateReplayGameState() {
+    if (isGameAReplay && playerIndex == 0) {
+        let game = await makeNextMoveRequest();
+        console.log(game);
+        let updatedGameState = await getGameStateRequest();
+
+        gameState = getGameStateFromNumber(updatedGameState.gameState);
+        console.log(gameState)
+        if (gameState == GameState.Ended) {
+            hasGameEnded = true;
+        }
+        displayGame(true, numberOfPlayers);
+    }
+}
+
 export function showMessage(message, isError = true, setTimout = true) {
     //hide error or information container
     hideMessage(!isError);
@@ -449,6 +521,8 @@ export function showMessage(message, isError = true, setTimout = true) {
 
     if (isError) {
         container = document.getElementById('messages-container__error-message');
+        let copyMessage = message;
+        message = `Error: ${copyMessage}`;
     }
     else {
         container = document.getElementById('messages-container__information-message');
@@ -456,7 +530,7 @@ export function showMessage(message, isError = true, setTimout = true) {
 
     messageSpan = container.querySelector('span')
     messageSpan.innerHTML = message;
-    container.style.display = "inline";
+    container.style.display = "block";
 
     if (setTimout) {
         // Fade out the message after 3 seconds

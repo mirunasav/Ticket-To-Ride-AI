@@ -9,36 +9,60 @@ namespace TicketToRide.Moves
     {
         public List<DestinationCard> ChosenDestinationCards { get; set; }
         public List<DestinationCard> NotChosenDestinationCards { get; set; }
+        private bool isFromLog { get; set; } //find the object from the game which denotes the same card
 
         public ChooseDestinationCardMove(
             int playerIndex,
             List<DestinationCard> chosenDestinationCards,
-            List<DestinationCard> notChosenDestinationCards)
+            List<DestinationCard> notChosenDestinationCards,
+            bool isFromLog = false)
             : base(playerIndex)
         {
             ChosenDestinationCards = chosenDestinationCards;
             NotChosenDestinationCards = notChosenDestinationCards;
+            this.isFromLog = isFromLog;
         }
 
         public override MakeMoveResponse Execute(Game game)
         {
+            
             //get the ones marked as waiting to be chosen 
             //update game state
-            foreach(var chosenCard in ChosenDestinationCards)
+            foreach (var chosenCard in ChosenDestinationCards)
             {
-                game.GetPlayer(PlayerIndex).PendingDestinationCards.Add(chosenCard);
-                game.Board.DestinationCards.Remove(chosenCard);
+                var card = chosenCard;
+
+                if (isFromLog)
+                {
+                    card = GetCardFromGame(game, chosenCard);
+
+                }
+
+                game.GetPlayer(PlayerIndex).PendingDestinationCards.Add(card);
+                game.Board.DestinationCards.Remove(card);
             }
 
             foreach (var notChosen in NotChosenDestinationCards)
             {
-                notChosen.IsWaitingToBeChosen = false;
+                var card = notChosen;
+
+                if (isFromLog)
+                {
+                    card = GetCardFromGame(game, notChosen);
+
+                }
+
+                card.IsWaitingToBeChosen = false;
             }
 
-            game.UpdateStateNextPlayerTurn();
-
-            var gameLogMessage = CreateGameLogMessage(game.Players.ElementAt(PlayerIndex).Name);
-            LogMove(game.GameLog, gameLogMessage);
+            if (game.GameState == Model.Enums.GameState.ChoosingFirstDestinationCards)
+            {
+                game.TryBeginGame();
+            }
+            else
+            {
+                game.UpdateStateNextPlayerTurn();
+            }
 
             return new MakeMoveResponse
             {
@@ -47,9 +71,10 @@ namespace TicketToRide.Moves
             };
         }
 
-        private string CreateGameLogMessage(string playerName)
+        private DestinationCard GetCardFromGame(Game game, DestinationCard card)
         {
-            return $"{playerName} has chosen destination cards.";
+            var realCard = game.Board.DestinationCards.Where(c => c.Equals(card)).First();
+            return realCard;
         }
     }
 }

@@ -1,5 +1,9 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using TicketToRide.Controllers;
+using TicketToRide.Controllers.GameLog;
 using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
 using TicketToRide.Helpers;
@@ -27,7 +31,7 @@ namespace TicketToRide.Services
 
         public GameService(
             GameProvider gameProvider,
-            MoveValidatorService moveValidatorService, 
+            MoveValidatorService moveValidatorService,
             RouteService routeService)
         {
             this.gameProvider = gameProvider;
@@ -72,7 +76,8 @@ namespace TicketToRide.Services
 
         public MakeMoveResponse DrawTrainCard(int playerIndex, int faceUpCardIndex)
         {
-            var drawTrainCardMove = new DrawTrainCardMove(playerIndex, faceUpCardIndex);
+            TrainColor cardColor = faceUpCardIndex != -1 ? game.Board.FaceUpDeck.ElementAt(faceUpCardIndex).Color : default;
+            var drawTrainCardMove = new DrawTrainCardMove(playerIndex, faceUpCardIndex, cardColor);
 
             var canMakeMoveMessage = CanMakeMove(drawTrainCardMove);
 
@@ -92,6 +97,17 @@ namespace TicketToRide.Services
             }
 
             var response = drawTrainCardMove.Execute(game);
+
+            if (response.IsValid)
+            {
+                game.GameLog.LogMove(game.GetPlayerName(playerIndex), drawTrainCardMove);
+                game.GameLog.UpdateTrainCardsDeckStates(game);
+            }
+
+            if (game.GameState == GameState.Ended)
+            {
+                game.GameLog.LogTrainCardsDeckStates();
+            }
 
             return response;
         }
@@ -144,6 +160,18 @@ namespace TicketToRide.Services
             }
 
             var response = claimRouteMove.Execute(game);
+
+            if (response.IsValid)
+            {
+                game.GameLog.LogMove(game.GetPlayerName(playerIndex), claimRouteMove);
+                game.GameLog.UpdateTrainCardsDeckStates(game);
+            }
+
+            if (game.GameState == GameState.Ended)
+            {
+                game.GameLog.LogTrainCardsDeckStates();
+            }
+
             return response;
         }
 
@@ -169,6 +197,18 @@ namespace TicketToRide.Services
             }
 
             var response = drawDestinationCardMove.Execute(game);
+
+            if (response.IsValid)
+            {
+                game.GameLog.LogMove(game.GetPlayerName(playerIndex), drawDestinationCardMove);
+                game.GameLog.UpdateTrainCardsDeckStates(game);
+            }
+
+            if (game.GameState == GameState.Ended)
+            {
+                game.GameLog.LogTrainCardsDeckStates();
+            }
+
             return response;
         }
 
@@ -235,6 +275,18 @@ namespace TicketToRide.Services
             }
 
             var response = chooseDestinationCardMove.Execute(game);
+
+            if (response.IsValid)
+            {
+                game.GameLog.LogMove(game.GetPlayerName(drawDestinationCardsRequest.PlayerIndex), chooseDestinationCardMove);
+                game.GameLog.UpdateTrainCardsDeckStates(game);
+            }
+
+            if (game.GameState == GameState.Ended)
+            {
+                game.GameLog.LogTrainCardsDeckStates();
+            }
+
             return response;
         }
 
@@ -321,7 +373,8 @@ namespace TicketToRide.Services
 
         public PossibleMoves GetAllPossibleMoves(int playerIndex)
         {
-            if (game.GameState == GameState.ChoosingDestinationCards)
+            if (game.GameState == GameState.ChoosingDestinationCards ||
+                game.GameState == GameState.ChoosingFirstDestinationCards)
             {
                 //get all choose destination card moves and return
                 var moves = GetChooseDestinationCardMoves(playerIndex);
@@ -332,6 +385,16 @@ namespace TicketToRide.Services
                     moves);
             }
 
+            if (game.GameState == GameState.DrawingFirstDestinationCards)
+            {
+                var drawDestCardMove = GetDrawDestinationCardMove(playerIndex);
+                return new PossibleMoves(
+                    new List<DrawTrainCardMove>(),
+                    new List<ClaimRouteMove>(),
+                    drawDestCardMove,
+                    new List<ChooseDestinationCardMove>(),
+                    true);
+            }
             var listOfDrawTrainCardMoves = new List<DrawTrainCardMove>();
             var listOfClaimRouteMoves = new List<ClaimRouteMove>();
 
@@ -354,7 +417,11 @@ namespace TicketToRide.Services
             if (game.GameState == GameState.WaitingForPlayerMove ||
                     game.GameState == GameState.DecidingAction)
             {
-                destinationCardMove = GetDrawDestinationCardMove(playerIndex);
+                //only add if it makes sense and there are other possible moves left
+                if (listOfClaimRouteMoves.Count > 0 && listOfDrawTrainCardMoves.Count > 0)
+                {
+                    destinationCardMove = GetDrawDestinationCardMove(playerIndex);
+                }
             }
 
             return new PossibleMoves(listOfDrawTrainCardMoves, listOfClaimRouteMoves, destinationCardMove, new List<ChooseDestinationCardMove>());
@@ -405,7 +472,9 @@ namespace TicketToRide.Services
             //get all cards marked as waiting to be chosen
             var destinationCardsToChooseFrom = game.Board.DestinationCards.Where(d => d.IsWaitingToBeChosen).ToList();
 
-            var combinationsOfChosenCards = CombinationGenerator.GetCombinations(destinationCardsToChooseFrom, 1, destinationCardsToChooseFrom.Count);
+            int minLength = game.GameState == GameState.ChoosingFirstDestinationCards ? 2 : 1;
+
+            var combinationsOfChosenCards = CombinationGenerator.GetCombinations(destinationCardsToChooseFrom, minLength, destinationCardsToChooseFrom.Count);
 
             var moves = new List<ChooseDestinationCardMove>();
 
@@ -462,6 +531,9 @@ namespace TicketToRide.Services
             };
 
             return new RunGameResponse(
+                game.GameLog.GameLogFileName,
+                game.GameLog.InitialGameStateFileName,
+                game.GameLog.TrainCardsFileName,
                 true,
                 message,
                 game.Players,
@@ -470,6 +542,81 @@ namespace TicketToRide.Services
                 game.LongestContPathPlayerIndex);
         }
         #endregion
+
+        #region replaying games
+
+        public Game LoadGameFromFile(string filePath)
+        {
+            string jsonString = System.IO.File.ReadAllText(filePath);
+
+            Game game = JsonSerializer.Deserialize<Game>(jsonString);
+
+            return game;
+        }
+
+        public MakeMoveResponse Replay(string initialGameFilePath, string gameLogFilePath, string trainCardsFilePath)
+        {
+            var reloadableGame = PrepGameForReplay(initialGameFilePath, gameLogFilePath, trainCardsFilePath);
+            return RunReplayableGame(reloadableGame);
+        }
+
+        public ReloadableGame PrepGameForReplay(string initialGameFilePath, string gameLogFilePath, string trainCardsFilePath)
+        {
+            var game = LoadGameFromFile(initialGameFilePath);
+            var gameLogLines = File.ReadAllLines(gameLogFilePath);
+
+            gameProvider.SetGame(game);
+            this.game = gameProvider.GetGame();
+
+            var moves = GameLogParser.ParseGameLogFile(routeService, gameLogLines, game.Players.Count);
+            var trainCardsStates = GameLogParser.ParseTrainCardStatesFile(trainCardsFilePath);
+            var reloadableGame = GetReloadableGame(game, moves, trainCardsStates);
+
+            gameProvider.SetReloadableGame(reloadableGame);
+
+            return reloadableGame;
+            //set game as the reloadable game
+        }
+
+        public MakeMoveResponse MakeNextMove()
+        {
+            lock (gameLock)
+            {
+                if (gameProvider.GetReloadableGame().MoveSequence.Count == 0)
+                {
+                    return new MakeMoveResponse { IsValid = true };
+                }
+
+                var move = gameProvider.GetReloadableGame().MoveSequence.First();
+                var newTrainCardsState = gameProvider.GetReloadableGame().TrainCardsStates.CardStates.First();
+
+                var moveResponse = move.Execute(game);
+                if (!moveResponse.IsValid)
+                {
+                    return moveResponse;
+                }
+
+                //update game
+                game.Board.Deck = newTrainCardsState.Deck;
+                game.Board.FaceUpDeck = newTrainCardsState.FaceUpDeck;
+                game.Board.DiscardPile = newTrainCardsState.DiscardPile;
+
+                gameProvider.GetReloadableGame().MoveSequence.Remove(move);
+                gameProvider.GetReloadableGame().TrainCardsStates.CardStates.Remove(newTrainCardsState);
+                game.GameLog.LogMove(move, game.GetPlayerName(move.PlayerIndex), false);
+            }
+
+            return new MakeMoveResponse { IsValid = true };
+        }
+
+        private ReloadableGame GetReloadableGame(Game game, List<Move> moves, TrainCardStates states)
+        {
+            return new ReloadableGame(game, moves, states);
+        }
+
+        #endregion
+
+
         #region frontend
         public MakeMoveResponse CanRouteBeClaimed(string origin, string destination)
         {
@@ -491,6 +638,7 @@ namespace TicketToRide.Services
             return validateMove;
         }
         #endregion
+
         private bool IsPlayerIndexValid(int playerIndex)
         {
             return !(game.Players.Count < playerIndex || playerIndex < 0);
@@ -532,10 +680,19 @@ namespace TicketToRide.Services
                 }
             }
 
-            if (move is ClaimRouteMove || move is DrawDestinationCardMove)
+            if (move is ClaimRouteMove)
             {
                 if (game.GameState != GameState.WaitingForPlayerMove &&
                     game.GameState != GameState.DecidingAction)
+                {
+                    return InvalidMovesMessages.InvalidActionForCurrentGameState;
+                }
+            }
+            if (move is DrawDestinationCardMove)
+            {
+                if (game.GameState != GameState.WaitingForPlayerMove &&
+                  game.GameState != GameState.DecidingAction &&
+                  game.GameState != GameState.DrawingFirstDestinationCards)
                 {
                     return InvalidMovesMessages.InvalidActionForCurrentGameState;
                 }
@@ -544,7 +701,8 @@ namespace TicketToRide.Services
             if (move is ChooseDestinationCardMove)
             {
                 if (game.GameState != GameState.WaitingForPlayerMove &&
-                  game.GameState != GameState.ChoosingDestinationCards)
+                  game.GameState != GameState.ChoosingDestinationCards &&
+                  game.GameState != GameState.ChoosingFirstDestinationCards)
                 {
                     return InvalidMovesMessages.InvalidActionForCurrentGameState;
                 }
@@ -570,7 +728,7 @@ namespace TicketToRide.Services
                 }
             }
 
-            var newGame = new Game(game.Board, players, game.GameState, game.PlayerTurn, game.GameLog);
+            var newGame = new Game(game.Board, players, game.GameState, game.PlayerTurn, game.GameLog, game.IsGameAReplay);
 
             return newGame;
         }
@@ -599,7 +757,19 @@ namespace TicketToRide.Services
                         Message = canMakeMoveMessage
                     };
                 }
+
                 var response = move.Execute(game);
+
+                if (response.IsValid)
+                {
+                    game.GameLog.LogMove(move, bot.Name);
+                    game.GameLog.UpdateTrainCardsDeckStates(game);
+                }
+
+                if(game.GameState == GameState.Ended)
+                {
+                    game.GameLog.LogTrainCardsDeckStates();
+                }
 
                 return response;
             }
@@ -618,7 +788,9 @@ namespace TicketToRide.Services
 
             for (int i = 0; i < game.Board.FaceUpDeck.Count; i++)
             {
-                var drawFaceUpCardMove = new DrawTrainCardMove(playerIndex, i);
+                var cardColor = game.Board.FaceUpDeck[i].Color;
+
+                var drawFaceUpCardMove = new DrawTrainCardMove(playerIndex, i, cardColor);
 
                 if (moveValidatorService.ValidateDrawTrainCardMove(drawFaceUpCardMove).IsValid)
                 {
@@ -650,6 +822,55 @@ namespace TicketToRide.Services
             //don't validate it, it's already valid
         }
 
+        private MakeMoveResponse RunReplayableGame(ReloadableGame reloadableGame)
+        {
+            foreach (var player in game.Players)
+            {
+                if (!player.IsBot)
+                {
+                    return new MakeMoveResponse
+                    {
+                        IsValid = false,
+                        Message = InvalidMovesMessages.NotAllPlayersAreBots
+                    };
+                }
+            }
 
+            string message = string.Empty;
+
+            while (reloadableGame.MoveSequence.Count > 0)
+            {
+                lock (gameLock)
+                {
+                    var move = reloadableGame.MoveSequence.First();
+                    var newTrainCardsState = reloadableGame.TrainCardsStates.CardStates.First();
+                    
+                    var moveResponse = move.Execute(game);
+                    if (!moveResponse.IsValid)
+                    {
+                        return moveResponse;
+                    }
+                   
+                    //update game
+                    game.Board.Deck = newTrainCardsState.Deck;
+                    game.Board.FaceUpDeck = newTrainCardsState.FaceUpDeck;
+                    game.Board.DiscardPile = newTrainCardsState.DiscardPile;
+
+                    reloadableGame.MoveSequence.Remove(move);
+                    reloadableGame.TrainCardsStates.CardStates.Remove(newTrainCardsState);
+                }
+            }
+
+            return new RunGameResponse(
+                game.GameLog.GameLogFileName,
+                game.GameLog.InitialGameStateFileName,
+                game.GameLog.TrainCardsFileName,
+                true,
+                message,
+                game.Players,
+                GetWinner(),
+                game.LongestContPathLength,
+                game.LongestContPathPlayerIndex);
+        }
     }
 }

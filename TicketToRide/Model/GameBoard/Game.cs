@@ -1,4 +1,6 @@
-﻿using TicketToRide.Model.Enums;
+﻿using TicketToRide.Controllers.GameLog;
+using TicketToRide.Model.Constants;
+using TicketToRide.Model.Enums;
 using TicketToRide.Model.Players;
 
 namespace TicketToRide.Model.GameBoard
@@ -11,29 +13,41 @@ namespace TicketToRide.Model.GameBoard
 
         public int PlayerTurn { get; set; } = 0;
 
-        public GameState GameState { get; set; } = GameState.WaitingForPlayerMove;
+        public int GameTurn { get; set; } = 1;
+
+        public GameState GameState { get; set; } = GameState.DrawingFirstDestinationCards;
 
         public bool IsFinalTurn { get; set; } = false;
 
+        public bool IsGameAReplay { get; set; } = false;
+
         public int LongestContPathLength { get; set; }
 
-        public int LongestContPathPlayerIndex {  get; set; }
+        public int LongestContPathPlayerIndex { get; set; }
+
+        private int LastPlayerTurn { get; set; } = 0;
 
         public GameLog GameLog { get; set; }
 
-        public Game(Board board, List<Player> players)
+        public Game()
+        {
+
+        }
+
+        public Game(Board board, List<Player> players, GameLog gameLog)
         {
             this.Board = board;
             this.Players = players;
-            this.GameLog = new GameLog(players.Count);
+            this.GameLog = gameLog;
         }
 
         //for player POV
         public Game(Board board,
-            List<Player> players, 
-            GameState gameState, 
+            List<Player> players,
+            GameState gameState,
             int playerTurn,
-            GameLog gameLog
+            GameLog gameLog,
+            bool isGameAReplay
             )
         {
             Board = board;
@@ -41,8 +55,8 @@ namespace TicketToRide.Model.GameBoard
             GameState = gameState;
             PlayerTurn = playerTurn;
             GameLog = gameLog;
+            IsGameAReplay = isGameAReplay;
         }
-
 
         public ValidateActionMessage ValidateAction(PlayerActions action, int playerIndex)
         {
@@ -72,16 +86,19 @@ namespace TicketToRide.Model.GameBoard
         {
             // if the last player had his turn and it was the final turn, finish game
             //or if the turn ended because of other reasons
-            if (PlayerTurn == Players.Count - 1 && IsFinalTurn)
+            GameState = GameState.WaitingForPlayerMove;
+            
+            if (PlayerTurn == LastPlayerTurn && IsFinalTurn)
             {
                 EndGame();
                 return;
             }
 
+            if (!IsFinalTurn)
+            {
+                UpdateIsFinalTurn();
+            }
             ChangePlayerTurn();
-            GameState = GameState.WaitingForPlayerMove;
-
-            UpdateIsFinalTurn();
         }
 
         public Player GetPlayer(int playerIndex)
@@ -94,23 +111,78 @@ namespace TicketToRide.Model.GameBoard
             return Players.ElementAt(playerIndex);
         }
 
+        public string GetPlayerName(int playerIndex)
+        {
+            return Players.ElementAt(playerIndex).Name;
+        }
+
         public void MarkRouteAsClaimed(City origin, City destination, Player player, TrainColor colorUsed)
         {
-            var foundRoute = Board.Routes.GetRoute(origin, destination, colorUsed);
+            var foundRoute = Board.Routes.GetRoute(origin, destination, colorUsed, true);
+
+            ////find out if the route is a double route
+            //var doubleRoutes = Board.Routes.GetRoute(origin, destination);
+
+            //if (doubleRoutes.Count > 1)
+            //{
+            //    //is double route, so check if the game is multiplayer
+            //    var numberOfPlayers = Players.Count;
+            //    if (numberOfPlayers < GameConstants.MinNumberOfPlayersForWhichDoubleRoutesCanBeUsed)
+            //    {
+            //        //remove both edges from route graph
+            //        Board.RouteGraph.RemoveEdges(doubleRoutes);
+            //    }
+            //    else
+            //    {
+            //        Board.RouteGraph.RemoveEdge(foundRoute);
+            //    }
+            //}
+            ////otherwise, just remove the found route
+            //else
+            //{
+            //    Board.RouteGraph.RemoveEdge(foundRoute);
+            //}
 
             ArgumentNullException.ThrowIfNull(nameof(foundRoute));
 
-                foundRoute.IsClaimed = true;
-                foundRoute.ClaimedBy = player.Color;
+            foundRoute.IsClaimed = true;
+            foundRoute.ClaimedBy = player.Color;
         }
 
         public void EndGame()
         {
-            if(GameState != GameState.Ended)
+            if (GameState != GameState.Ended)
             {
                 ComputeFinalPoints();
                 GameState = GameState.Ended;
             }
+        }
+      
+        public void TryBeginGame()
+        {
+            var canBeginGame = true;
+
+            foreach (var player in Players)
+            {
+                if (player.PendingDestinationCards is null ||
+                    player.PendingDestinationCards.Count == 0)
+                {
+                    canBeginGame = false;
+                    break;
+                }
+            }
+
+            if (canBeginGame)
+            {
+                GameState = GameState.WaitingForPlayerMove;
+                GameTurn = 0;
+            }
+            else
+            {
+                GameState = GameState.DrawingFirstDestinationCards;
+            }
+
+            ChangePlayerTurn();
         }
 
         #region private
@@ -119,6 +191,7 @@ namespace TicketToRide.Model.GameBoard
             if (PlayerTurn == Players.Count - 1)
             {
                 PlayerTurn = 0;
+                GameTurn++;
                 return;
             }
 
@@ -127,15 +200,17 @@ namespace TicketToRide.Model.GameBoard
 
         private void UpdateIsFinalTurn()
         {
-            foreach(var player in Players)
+            foreach (var player in Players)
             {
-                if(player.RemainingTrains <= 2)
+                if (player.RemainingTrains <= 2)
                 {
                     IsFinalTurn = true;
+                    LastPlayerTurn = PlayerTurn;
                     return;
                 }
             }
         }
+
         private void ComputeFinalPoints()
         {
             int longestContPathLength = 0;
@@ -155,7 +230,7 @@ namespace TicketToRide.Model.GameBoard
                 }
 
                 var longestContPath = player.ClaimedRoutes.LongestContinuousPath();
-                if(longestContPath.Item1 > longestContPathLength)
+                if (longestContPath.Item1 > longestContPathLength)
                 {
                     longestContPathLength = longestContPath.Item1;
                     longestContPathPlayerIndex = player.PlayerIndex;
@@ -176,6 +251,8 @@ namespace TicketToRide.Model.GameBoard
                 Message = "Player can draw train card"
             };
         }
+
+       
         #endregion
     }
 
