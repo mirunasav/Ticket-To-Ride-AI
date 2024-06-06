@@ -47,6 +47,32 @@ namespace TicketToRide.Model.GameBoard
             }
         }
 
+        public void RemoveRoute(Route route)
+        {
+            var equivalentEdge = GetEquivalentEdge(route);
+
+            if (equivalentEdge != null)
+            {
+                equivalentEdge.Routes.Remove(route);
+
+                if (equivalentEdge.Routes.Count == 0)
+                {
+                    Edges.Remove(equivalentEdge);
+                }
+
+                //remove cities if they no longer have any routes
+                if (!HasRoutes(route.Origin))
+                {
+                    RemoveCity(route.Origin);
+                }
+
+                if (!HasRoutes(route.Destination))
+                {
+                    RemoveCity(route.Destination);
+                }
+            }
+        }
+
         public Edge? GetEquivalentEdge(Route route)
         {
             return Edges
@@ -141,6 +167,16 @@ namespace TicketToRide.Model.GameBoard
             return (maxLength, maxPathEdges);
         }
 
+        private void RemoveCity(City city)
+        {
+            Cities.Remove(city);
+        }
+
+        private bool HasRoutes(City city)
+        {
+            return Edges.Any(edge => edge.Routes.Any(route => route.Origin == city || route.Destination == city));
+        }
+
         public List<Route> FindAllShortestPathsBetweenDestinationCards(
             List<DestinationCard> destinationCards,
             PlayerColor playerColor,
@@ -162,6 +198,27 @@ namespace TicketToRide.Model.GameBoard
             return routesInShortestPaths.Distinct().ToList();
         }
 
+        public List<Route> GetRemainingRoutesToConnectAllCities(List<DestinationCard> destinationCards, PlayerColor playerColor, BoardRouteCollection boardRouteCollection)
+        {
+            var shortestPathConnectingAllCities = GetShortestPathConnectingAllCities(destinationCards, playerColor, boardRouteCollection);
+
+            List<int> indicesToRemove = [];
+
+            for(int i = 0; i < shortestPathConnectingAllCities.Count(); i++)
+            {
+                if (shortestPathConnectingAllCities[i].IsClaimed 
+                    && shortestPathConnectingAllCities[i].ClaimedBy == playerColor)
+                {
+                    indicesToRemove.Add(i);
+                }
+            }
+            for (int i = indicesToRemove.Count - 1; i >= 0; i--)
+            {
+                shortestPathConnectingAllCities.RemoveAt(indicesToRemove[i]);
+            }
+
+            return shortestPathConnectingAllCities;
+        }
         public List<Route> GetShortestPathConnectingAllCities(List<DestinationCard> destinationCards, PlayerColor playerColor, BoardRouteCollection boardRouteCollection)
         {
             if (destinationCards.Count == 0)

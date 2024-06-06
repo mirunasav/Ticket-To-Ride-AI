@@ -127,7 +127,7 @@ namespace TicketToRide.Services
                 };
             }
 
-            var validateMove = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove);
+            var validateMove = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove, game.GetPlayer(request.PlayerIndex).RemainingTrains);
             if (!validateMove.IsValid)
             {
                 return validateMove;
@@ -439,7 +439,7 @@ namespace TicketToRide.Services
                 //see whether they can be claimed
                 var canClaimRouteMove = new CanClaimRouteMove(playerIndex, new List<Model.GameBoard.Route> { route });
 
-                var canRouteBeClaimed = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove);
+                var canRouteBeClaimed = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove, game.GetPlayer(playerIndex).RemainingTrains);
 
                 if (!canRouteBeClaimed.IsValid)
                 {
@@ -538,6 +538,117 @@ namespace TicketToRide.Services
                 GetWinner(),
                 game.LongestContPathLength,
                 game.LongestContPathPlayerIndex);
+        }
+
+        public GameSummaryResponse ComputeGameSummaryResponse(RunGameResponse response, GameStatistics gameStatistics)
+        {
+            var gameSummaryResponse = new GameSummaryResponse();
+
+            foreach (var winner in response.Winners)
+            {
+                int playerIndex = winner.PlayerIndex;
+
+                gameSummaryResponse.WinnerPlayerIndex.Add(playerIndex);
+
+                // Check if the playerIndex exists in the dictionary
+                if (gameStatistics.NumberOfGamesWonByEachPlayer.TryGetValue(playerIndex, out int value))
+                {
+                    gameStatistics.NumberOfGamesWonByEachPlayer[playerIndex] = ++value;
+                }
+                else
+                {
+                    gameStatistics.NumberOfGamesWonByEachPlayer[playerIndex] = 1;
+                }
+            }
+
+            gameSummaryResponse.TrainCardDeckStatesFileName = response.TrainCardDeckStatesFileName;
+            gameSummaryResponse.InitialGameStateFileName = response.InitialGameStateFile;
+            gameSummaryResponse.GameLogFileName = response.GameLogFile;
+            gameSummaryResponse.Players = response.Players;
+            gameSummaryResponse.LongestContPathLength = response.LongestContPathLength;
+            gameSummaryResponse.LongestContPathPlayerIndex = response.LongestContPathPlayerIndex;
+
+            List<int> playerPoints = [];
+
+            foreach (var player in response.Players)
+            {
+                playerPoints.Add(player.Points);
+
+                // Check if the playerIndex exists in the dictionary
+                if (gameStatistics.PlayerPointAverage.TryGetValue(player.PlayerIndex, out double pointValue))
+                {
+                    gameStatistics.PlayerPointAverage[player.PlayerIndex] += player.Points;
+                }
+                else
+                {
+                    gameStatistics.PlayerPointAverage[player.PlayerIndex] = player.Points;
+                }
+
+                // max player points
+                if (gameStatistics.MaxPointsPerPlayer.TryGetValue(player.PlayerIndex, out int maxPlayerPoints))
+                {
+                    if (player.Points > maxPlayerPoints)
+                    {
+                        gameStatistics.MaxPointsPerPlayer[player.PlayerIndex] = player.Points;
+                    }
+                }
+                else
+                {
+                    gameStatistics.MaxPointsPerPlayer[player.PlayerIndex] = player.Points;
+                }
+
+                //no of finished destination tickets
+                if (gameStatistics.NumberOfFinishedDestinationTickets.TryGetValue(player.PlayerIndex, out double noOfTickets))
+                {
+                    gameStatistics.NumberOfFinishedDestinationTickets[player.PlayerIndex] += player.CompletedDestinationCards.Count;
+                }
+                else
+                {
+                    gameStatistics.NumberOfFinishedDestinationTickets[player.PlayerIndex] = player.CompletedDestinationCards.Count;
+                }
+            }
+
+            //compute biggest and smalles point difference
+            playerPoints.Sort();
+
+            int maxPoints = playerPoints.Max();
+            int minPoints = playerPoints.Min();
+            int biggestDifference = maxPoints - minPoints;
+
+            // Initialize smallestDifference to a large value
+            int smallestDifference = int.MaxValue;
+
+            // Compute the smallest difference between consecutive points
+            for (int i = 1; i < playerPoints.Count; i++)
+            {
+                int difference = playerPoints[i] - playerPoints[i - 1];
+                if (difference < smallestDifference)
+                {
+                    smallestDifference = difference;
+                }
+            }
+
+            if (biggestDifference > gameStatistics.BiggestPointDifference)
+            {
+                gameStatistics.BiggestPointDifference = biggestDifference;
+            }
+
+            if (smallestDifference < gameStatistics.SmallestPointDifference)
+            {
+                gameStatistics.SmallestPointDifference = smallestDifference;
+            }
+
+            //compute number of longest path prizes
+            if (gameStatistics.NumberOfLongestPathPrizes.TryGetValue(response.LongestContPathPlayerIndex, out int number))
+            {
+                gameStatistics.NumberOfLongestPathPrizes[response.LongestContPathPlayerIndex] = ++number;
+            }
+            else
+            {
+                gameStatistics.NumberOfLongestPathPrizes[response.LongestContPathPlayerIndex] = 1;
+            }
+
+            return gameSummaryResponse;
         }
         #endregion
 

@@ -2,7 +2,7 @@
 {
     public class MultipleGameResponse
     {
-        public Dictionary<int, int> NumberOfGamesWonByEachPlayer { get; set; } = new Dictionary<int, int>();
+        public GameStatistics GameStatistics { get; set; } = new GameStatistics();
         
         public List<GameSummaryResponse> GameSummaries { get; set; } = new List<GameSummaryResponse>();
     }

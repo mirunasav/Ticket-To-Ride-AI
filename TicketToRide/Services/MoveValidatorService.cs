@@ -92,7 +92,7 @@ namespace TicketToRide.Services
             return routeService.CanPlayerClaimRoute(claimRouteMove, numberOfPlayers);
         }
 
-        public MakeMoveResponse CanRouteBeClaimed(CanClaimRouteMove canClaimRouteMove)
+        public MakeMoveResponse CanRouteBeClaimed(CanClaimRouteMove canClaimRouteMove, int playerTrainsLeft = int.MaxValue)
         {
             //check that the route exists and is not occupied
             if(canClaimRouteMove.Route is null || canClaimRouteMove.Route.Count == 0)
@@ -106,6 +106,15 @@ namespace TicketToRide.Services
                 {
                     IsValid = false,
                     Message = InvalidMovesMessages.RouteDoesNotExist
+                };
+            }
+
+            if(canClaimRouteMove.Route.ElementAt(0).Length > playerTrainsLeft)
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = InvalidMovesMessages.PlayerDoesNotHaveResources
                 };
             }
 

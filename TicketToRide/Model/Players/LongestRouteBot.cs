@@ -54,8 +54,11 @@ namespace TicketToRide.Model.Players
                 return bestMove;
             }
 
-            
-            var shortestPathRoutes = GameRouteGraph.GetShortestPathConnectingAllCities(PendingDestinationCards, Color, game.Board.Routes);
+            List<GameBoard.Route> shortestPathRoutes = [];
+
+            var allDestinationCards = CompletedDestinationCards.Union(PendingDestinationCards).ToList();
+
+            shortestPathRoutes = GameRouteGraph.GetRemainingRoutesToConnectAllCities(allDestinationCards, Color, game.Board.Routes);
 
             if (possibleMoves.ClaimRouteMoves.Count > 0)
             {
@@ -64,6 +67,7 @@ namespace TicketToRide.Model.Players
 
                 if (!(shortestPathRoutes is null || shortestPathRoutes.Count == 0))
                 {
+                    //check if the 
                     //see if there is a possible route which is in these 
                     foreach (var possibleClaimRouteMove in possibleMoves.ClaimRouteMoves)
                     {
@@ -81,17 +85,26 @@ namespace TicketToRide.Model.Players
                 {
                     //the cities are unreachable so there is no goal to work to.
                     //if the turn is less than 30 and the number of players is 2, get more tickets
-                    if (game.Players.Count < 3 && game.GameTurn <= 30)
+                    if (game.Players.Count < 3 && game.GameTurn <= 40)
                     {
                         return possibleMoves.DrawDestinationCardMove;
                     }
 
                     //otherwise, Simply claim a route, ordered by length, to bring most points
+                    //try to choose it to extend longest path
                     //so as not to risk getting a card and not finishing it
 
-                    var claimRouteMove = possibleMoves.ClaimRouteMoves
-                        .OrderByDescending(r => r.Route.ElementAt(0).Length)
-                        .First();
+                    var claimRouteMoveQuery = possibleMoves.ClaimRouteMoves
+                        .OrderByDescending(r => r.Route.ElementAt(0).Length);
+                   
+                    var claimRouteMove = claimRouteMoveQuery
+                        .FirstOrDefault(r => DoesRouteExtendLongestPath(r.Route.ElementAt(0)));
+
+                    if(claimRouteMove == null)
+                    {
+                        claimRouteMove = claimRouteMoveQuery.First();
+                    }
+
                     return claimRouteMove;
                 }
             }
@@ -181,6 +194,19 @@ namespace TicketToRide.Model.Players
 
             //if there are not possible draw train card moves
             return possibleMoves.DrawDestinationCardMove;
+        }
+
+        private bool DoesRouteExtendLongestPath(GameBoard.Route route)
+        {
+            (int pathLength, var longestContPath) = ClaimedRoutes.LongestContinuousPath();
+
+            ClaimedRoutes.AddRoute(route);
+
+            (int newPathLength, var newLongestContPath) = ClaimedRoutes.LongestContinuousPath();
+
+            ClaimedRoutes.RemoveRoute(route);
+
+            return newPathLength > pathLength;
         }
 
     }

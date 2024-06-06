@@ -70,9 +70,9 @@ namespace TicketToRide.Controllers
             //pasez player index si iau datele pt fiecare player, restul au hide data
             try
             {
-                
+
                 var game = gameService.GetGameInstance(playerIndex);
-                
+
                 if (game is null)
                 {
                     return NotFound("Game is null");
@@ -482,7 +482,7 @@ namespace TicketToRide.Controllers
         public IActionResult RunMultipleGames([FromBody] NewMultipleGamesRequest newMultipleGamesRequest)
         {
             int numberOfGames = newMultipleGamesRequest.NumberOfGames;
-            Dictionary<int, int> numberOfGamesWonByEachPlayer = new Dictionary<int, int>();
+
             var gameSummaries = new MultipleGameResponse();
 
             if (newMultipleGamesRequest.NumberOfPlayers < 2 || newMultipleGamesRequest.NumberOfPlayers > 4)
@@ -531,39 +531,16 @@ namespace TicketToRide.Controllers
 
                 if (gameResult is RunGameResponse response)
                 {
-                    var gameSummaryResponse = new GameSummaryResponse();
-                    foreach (var winner in response.Winners)
-                    {
-                        int playerIndex = winner.PlayerIndex;
-
-                        gameSummaryResponse.WinnerPlayerIndex.Add(playerIndex);
-
-                        // Check if the playerIndex exists in the dictionary
-                        if (numberOfGamesWonByEachPlayer.TryGetValue(playerIndex, out int value))
-                        {
-                            numberOfGamesWonByEachPlayer[playerIndex] = ++value;
-                        }
-                        else
-                        {
-                            numberOfGamesWonByEachPlayer[playerIndex] = 1;
-                        }
-                    }
-
-                    gameSummaryResponse.TrainCardDeckStatesFileName = response.TrainCardDeckStatesFileName;
-                    gameSummaryResponse.InitialGameStateFileName = response.InitialGameStateFile;
-                    gameSummaryResponse.GameLogFileName = response.GameLogFile;
-                    gameSummaryResponse.Players = response.Players;
-                    gameSummaryResponse.LongestContPathLength = response.LongestContPathLength;
-                    gameSummaryResponse.LongestContPathPlayerIndex  = response.LongestContPathPlayerIndex;
+                    var gameSummaryResponse = gameService.ComputeGameSummaryResponse(response, gameSummaries.GameStatistics);
                     gameSummaries.GameSummaries.Add(gameSummaryResponse);
                 }
             }
 
-            gameSummaries.NumberOfGamesWonByEachPlayer = numberOfGamesWonByEachPlayer;
-
+            gameSummaries.GameStatistics.ComputePlayerPointAverage(numberOfGames);
+            gameSummaries.GameStatistics.ComputeAvgDestinationTickets(numberOfGames);
             return Json(gameSummaries);
-
         }
+
         [HttpPost]
         public IActionResult RunNewGame([FromBody] NewGameRequest newGameRequest)
         {
