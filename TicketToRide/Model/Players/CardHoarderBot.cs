@@ -82,7 +82,7 @@ namespace TicketToRide.Model.Players
             //no such color? draw from face down deck
             if (possibleMoves.DrawTrainCardMoves.Count > 0)
             {
-                var playerCardsGroupedByColor = GroupedTrainColors();
+                var playerCardsGroupedByColor = GetGroupedTrainColors();
                 foreach (var drawTrainCardMove in possibleMoves.DrawTrainCardMoves)
                 {
                     if ((playerCardsGroupedByColor.ContainsKey(drawTrainCardMove.CardColor) &&

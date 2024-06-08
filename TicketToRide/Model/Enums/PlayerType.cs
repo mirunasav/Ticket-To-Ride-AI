@@ -7,6 +7,7 @@
         PseudoRandomBot = 3,
         SimpleStrategyBot = 4,
         CardHoarderBot = 5,
-        LongestRouteBot = 6
+        LongestRouteBot = 6,
+        EvaluationBasedBot = 7
     }
 }

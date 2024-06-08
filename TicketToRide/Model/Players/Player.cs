@@ -177,7 +177,7 @@ namespace TicketToRide.Model.Players
             return newlyCompletedDestinations;
         }
 
-        public Dictionary<TrainColor, int> GroupedTrainColors()
+        public Dictionary<TrainColor, int> GetGroupedTrainColors()
         {
             Dictionary<TrainColor, int> colorCounts = [];
 

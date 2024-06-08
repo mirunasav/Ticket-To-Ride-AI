@@ -204,9 +204,9 @@ namespace TicketToRide.Model.GameBoard
 
             List<int> indicesToRemove = [];
 
-            for(int i = 0; i < shortestPathConnectingAllCities.Count(); i++)
+            for (int i = 0; i < shortestPathConnectingAllCities.Count(); i++)
             {
-                if (shortestPathConnectingAllCities[i].IsClaimed 
+                if (shortestPathConnectingAllCities[i].IsClaimed
                     && shortestPathConnectingAllCities[i].ClaimedBy == playerColor)
                 {
                     indicesToRemove.Add(i);
@@ -219,6 +219,7 @@ namespace TicketToRide.Model.GameBoard
 
             return shortestPathConnectingAllCities;
         }
+
         public List<Route> GetShortestPathConnectingAllCities(List<DestinationCard> destinationCards, PlayerColor playerColor, BoardRouteCollection boardRouteCollection)
         {
             if (destinationCards.Count == 0)
@@ -369,6 +370,77 @@ namespace TicketToRide.Model.GameBoard
             return trainCardsDictionary;
         }
 
+        //for evaluation player when checking the availability of a path
+        public bool IsPathAvailableToPlayer(List<GameBoard.Route> path, PlayerColor playerColor)
+        {
+            foreach (var route in path)
+            {
+                //if there is a route that is claimed and unusable
+                if (!route.IsClaimed && !route.CanPlayerUseRoute(playerColor))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        //for evaluation player: find all paths between 2 cities, ordered by length
+        public List<List<Route>> FindAllPaths(City start, City end, bool isFirstTurn)
+        {
+            List<List<Route>> resultPaths = new List<List<Route>>();
+            PriorityQueue<List<Route>, int> pathsQueue = new PriorityQueue<List<Route>, int>();
+            pathsQueue.Enqueue(new List<Route>(), 0);
+
+            int pathsFound = 0;
+            int iterations = 0;
+
+            while (pathsQueue.Count > 0 && (pathsFound < 100 || isFirstTurn) && iterations < 10000)
+            {
+                iterations++;
+
+                var currentPath = pathsQueue.Dequeue();
+                City currentCity = currentPath.Count == 0 ? start : currentPath.Last().Destination;
+
+                if (currentCity.Equals(end))
+                {
+                    resultPaths.Add(new List<Route>(currentPath));
+                    pathsFound++;
+                    if (pathsFound >= 100 && !isFirstTurn) break;
+                }
+
+                foreach (var edge in GetEdgesFromCity(currentCity))
+                {
+                    foreach (var route in edge.Routes)
+                    {
+                        City nextCity = route.Origin.Equals(currentCity) ? route.Destination : route.Origin;
+
+                        if (!IsCityInPath(currentPath, nextCity))
+                        {
+                            var newPath = new List<Route>(currentPath) { route };
+
+                            // Ensure the path cost does not exceed 45
+                            if (newPath.Sum(r => r.Length) <= 45)
+                            {
+                                pathsQueue.Enqueue(newPath, newPath.Sum(r => r.Length));
+                            }
+                        }
+                    }
+                }
+            }
+
+            return resultPaths.OrderBy(p => p.Sum(r => r.Length)).ToList();
+        }
+
+        private bool IsCityInPath(List<Route> path, City city)
+        {
+            return path.Any(r => r.Origin.Equals(city) || r.Destination.Equals(city));
+        }
+
+        private IEnumerable<Edge> GetEdgesFromCity(City city)
+        {
+            return Edges.Where(e => e.Origin.Equals(city) || e.Destination.Equals(city));
+        }
+
         private List<Edge> ConstructMST(List<City> cities, List<Edge> allPaths)
         {
 
@@ -445,7 +517,7 @@ namespace TicketToRide.Model.GameBoard
     {
         public City Origin { get; set; }
         public City Destination { get; set; }
-       
+
         public List<Route> Routes { get; set; }
 
         public int Cost { get; set; }
