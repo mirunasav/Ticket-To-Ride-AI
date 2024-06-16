@@ -1,7 +1,6 @@
 import { PlayerColor, TrainColor } from "./GameObjects.js";
 import { hoveredCityNames } from "./destinationCards.js";
 import { cities, claimedRoutes, playerIndex, showMessage } from "./game.js";
-import { getPlayerColorFromNumber } from "./getObjectsFromEnum.js";
 import { buildColorsWithWhichRouteCanBeClaimedMessage } from "./trainCardsDeck.js";
 
 let boardImg; // Variable to store the board image

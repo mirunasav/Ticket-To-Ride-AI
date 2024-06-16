@@ -1,6 +1,7 @@
 ﻿using QuickGraph.Graphviz.Dot;
 using TicketToRide.Helpers;
 using TicketToRide.Model.Cards;
+using TicketToRide.Model.Constants;
 using TicketToRide.Model.Enums;
 
 namespace TicketToRide.Model.GameBoard
@@ -180,13 +181,14 @@ namespace TicketToRide.Model.GameBoard
         public List<Route> FindAllShortestPathsBetweenDestinationCards(
             List<DestinationCard> destinationCards,
             PlayerColor playerColor,
-            BoardRouteCollection boardRouteCollection)
+            BoardRouteCollection boardRouteCollection,
+            int numberOfPlayers)
         {
             var routesInShortestPaths = new List<Route>();
 
             foreach (var card in destinationCards)
             {
-                (int shortestDistance, List<Edge> shortestPath) = FindShortestPath(card.Origin, card.Destination, playerColor, boardRouteCollection);
+                (int shortestDistance, List<Edge> shortestPath) = FindShortestPath(card.Origin, card.Destination, playerColor, boardRouteCollection, numberOfPlayers);
 
                 if (shortestDistance != int.MaxValue)
                 {
@@ -198,9 +200,9 @@ namespace TicketToRide.Model.GameBoard
             return routesInShortestPaths.Distinct().ToList();
         }
 
-        public List<Route> GetRemainingRoutesToConnectAllCities(List<DestinationCard> destinationCards, PlayerColor playerColor, BoardRouteCollection boardRouteCollection)
+        public List<Route> GetRemainingRoutesToConnectAllCities(List<DestinationCard> destinationCards, PlayerColor playerColor, BoardRouteCollection boardRouteCollection, int numberOfPlayers)
         {
-            var shortestPathConnectingAllCities = GetShortestPathConnectingAllCities(destinationCards, playerColor, boardRouteCollection);
+            var shortestPathConnectingAllCities = GetShortestPathConnectingAllCities(destinationCards, playerColor, boardRouteCollection, numberOfPlayers);
 
             List<int> indicesToRemove = [];
 
@@ -220,7 +222,7 @@ namespace TicketToRide.Model.GameBoard
             return shortestPathConnectingAllCities;
         }
 
-        public List<Route> GetShortestPathConnectingAllCities(List<DestinationCard> destinationCards, PlayerColor playerColor, BoardRouteCollection boardRouteCollection)
+        public List<Route> GetShortestPathConnectingAllCities(List<DestinationCard> destinationCards, PlayerColor playerColor, BoardRouteCollection boardRouteCollection, int numberOfPlayers)
         {
             if (destinationCards.Count == 0)
             {
@@ -232,7 +234,7 @@ namespace TicketToRide.Model.GameBoard
             {
                 for (int i = 0; i < destinationCards.Count; i++)
                 {
-                    var (distance, path) = FindShortestPath(destinationCards[i].Origin, destinationCards[i].Destination, playerColor, boardRouteCollection);
+                    var (distance, path) = FindShortestPath(destinationCards[i].Origin, destinationCards[i].Destination, playerColor, boardRouteCollection, numberOfPlayers);
 
                     if (distance != int.MaxValue)
                     {
@@ -247,10 +249,10 @@ namespace TicketToRide.Model.GameBoard
             {
                 for (int j = i + 1; j < destinationCards.Count; j++)
                 {
-                    var (distanceAC, pathAC) = FindShortestPath(destinationCards[i].Origin, destinationCards[j].Origin, playerColor, boardRouteCollection);
-                    var (distanceAD, pathAD) = FindShortestPath(destinationCards[i].Origin, destinationCards[j].Destination, playerColor, boardRouteCollection);
-                    var (distanceBC, pathBC) = FindShortestPath(destinationCards[i].Destination, destinationCards[j].Origin, playerColor, boardRouteCollection);
-                    var (distanceBD, pathBD) = FindShortestPath(destinationCards[i].Destination, destinationCards[j].Destination, playerColor, boardRouteCollection);
+                    var (distanceAC, pathAC) = FindShortestPath(destinationCards[i].Origin, destinationCards[j].Origin, playerColor, boardRouteCollection, numberOfPlayers);
+                    var (distanceAD, pathAD) = FindShortestPath(destinationCards[i].Origin, destinationCards[j].Destination, playerColor, boardRouteCollection, numberOfPlayers);
+                    var (distanceBC, pathBC) = FindShortestPath(destinationCards[i].Destination, destinationCards[j].Origin, playerColor, boardRouteCollection, numberOfPlayers);
+                    var (distanceBD, pathBD) = FindShortestPath(destinationCards[i].Destination, destinationCards[j].Destination, playerColor, boardRouteCollection, numberOfPlayers);
 
                     var shortestPath = new List<Edge>();
                     if (distanceAC < distanceAD && distanceAC < distanceBC && distanceAC < distanceBD)
@@ -282,7 +284,7 @@ namespace TicketToRide.Model.GameBoard
             return uniqueRoutes.ToList();
         }
 
-        public (int, List<Edge>) FindShortestPath(City startCity, City endCity, PlayerColor playerColor, BoardRouteCollection boardRouteCollection)
+        public (int, List<Edge>) FindShortestPath(City startCity, City endCity, PlayerColor playerColor, BoardRouteCollection boardRouteCollection, int numberOfPlayers)
         {
             var distances = Cities.ToDictionary(city => city, city => int.MaxValue);
             var previousEdges = new Dictionary<City, Edge>();
@@ -302,7 +304,7 @@ namespace TicketToRide.Model.GameBoard
 
                 foreach (var edge in Edges.Where(e =>
                 (e.Origin == currentCity || e.Destination == currentCity)
-                && (e.CanPlayerUseEdge(playerColor) || e.CanBeClaimed())))
+                && (e.CanPlayerUseEdge(playerColor) || e.CanBeClaimed(numberOfPlayers))))
                 {
                     var relevantEdge = edge;
                     if (edge.Routes.Count > 1)
@@ -376,7 +378,7 @@ namespace TicketToRide.Model.GameBoard
             foreach (var route in path)
             {
                 //if there is a route that is claimed and unusable
-                if (!route.IsClaimed && !route.CanPlayerUseRoute(playerColor))
+                if (route.IsClaimed && !route.CanPlayerUseRoute(playerColor))
                 {
                     return false;
                 }
@@ -385,50 +387,75 @@ namespace TicketToRide.Model.GameBoard
         }
 
         //for evaluation player: find all paths between 2 cities, ordered by length
-        public List<List<Route>> FindAllPaths(City start, City end, bool isFirstTurn)
+        public List<List<Route>> FindAllPaths(City start, City end, bool isFirstTurn, PlayerColor playerColor, int maxPaths, int numberOfPlayers)
         {
             List<List<Route>> resultPaths = new List<List<Route>>();
-            PriorityQueue<List<Route>, int> pathsQueue = new PriorityQueue<List<Route>, int>();
-            pathsQueue.Enqueue(new List<Route>(), 0);
-
-            int pathsFound = 0;
+            Queue<(List<Route> Path, City CurrentCity)> pathsQueue = new Queue<(List<Route>, City)>();
+            pathsQueue.Enqueue((new List<Route>(), start));
             int iterations = 0;
 
-            while (pathsQueue.Count > 0 && (pathsFound < 100 || isFirstTurn) && iterations < 10000)
+            while (pathsQueue.Count > 0 &&
+                ((iterations < 10000 && resultPaths.Count < maxPaths)
+                    || (resultPaths.Count == 0 && isFirstTurn)))
             {
                 iterations++;
+                var (currentPath, currentCity) = pathsQueue.Dequeue();
 
-                var currentPath = pathsQueue.Dequeue();
-                City currentCity = currentPath.Count == 0 ? start : currentPath.Last().Destination;
-
+                // Check if we've reached the destination
                 if (currentCity.Equals(end))
                 {
                     resultPaths.Add(new List<Route>(currentPath));
-                    pathsFound++;
-                    if (pathsFound >= 100 && !isFirstTurn) break;
+                    continue; // Continue searching for other paths
                 }
 
                 foreach (var edge in GetEdgesFromCity(currentCity))
                 {
                     foreach (var route in edge.Routes)
                     {
-                        City nextCity = route.Origin.Equals(currentCity) ? route.Destination : route.Origin;
-
-                        if (!IsCityInPath(currentPath, nextCity))
+                        // Skip claimed routes if the player can't use them
+                        if (route.IsClaimed && !route.CanPlayerUseRoute(playerColor))
                         {
-                            var newPath = new List<Route>(currentPath) { route };
+                            continue;
+                        }
 
-                            // Ensure the path cost does not exceed 45
-                            if (newPath.Sum(r => r.Length) <= 45)
+                        //check if can be claimed
+                        if (edge.CanBeClaimed(numberOfPlayers))
+                        {
+                            City nextCity = route.Origin.Equals(currentCity) ? route.Destination : route.Origin;
+
+                            // Avoid cycles: Check if nextCity is already in the path
+                            if (!IsCityInPath(currentPath, nextCity))
                             {
-                                pathsQueue.Enqueue(newPath, newPath.Sum(r => r.Length));
+                                var newPath = new List<Route>(currentPath) { route };
+                                pathsQueue.Enqueue((newPath, nextCity));
                             }
                         }
+
                     }
                 }
             }
 
             return resultPaths.OrderBy(p => p.Sum(r => r.Length)).ToList();
+        }
+
+        // Helper to get the next city in the path
+        private City GetNextCityInPath(Route lastRoute, List<Route> path, City start)
+        {
+            if (path.Count == 1)
+            {
+                // If there's only one route in the path, the next city is its destination
+                if (lastRoute.Destination == start)
+                {
+                    return lastRoute.Origin;
+                }
+                return lastRoute.Destination;
+            }
+
+            // Get the second last city from the path
+            City secondLastCity = path[path.Count - 2].Origin.Equals(lastRoute.Origin) ? path[path.Count - 2].Destination : path[path.Count - 2].Origin;
+
+            // Return the endpoint of the last route that is not the second last city
+            return secondLastCity.Equals(lastRoute.Origin) ? lastRoute.Destination : lastRoute.Origin;
         }
 
         private bool IsCityInPath(List<Route> path, City city)
@@ -535,9 +562,10 @@ namespace TicketToRide.Model.GameBoard
             Routes = route;
         }
 
-        public bool CanBeClaimed()
+        public bool CanBeClaimed(int numberOfPlayers)
         {
-            return Routes.Any(r => !r.IsClaimed);
+            var isClaimed = IsRouteClaimed(Routes, numberOfPlayers);
+            return !isClaimed;
         }
 
         public bool CanPlayerUseEdge(PlayerColor color)
@@ -574,6 +602,37 @@ namespace TicketToRide.Model.GameBoard
             }
 
             return new Edge(routes);
+        }
+
+        private bool IsRouteClaimed(IList<Model.GameBoard.Route> routeCollection, int numberOfPlayers)
+        {
+            //if the route is not double, just check if the first element of the collection 
+            //is claimed
+            if (routeCollection.Count == 1)
+            {
+                return routeCollection.ElementAt(0).IsClaimed;
+            }
+
+            //else, check if any of the routes is claimed and the game has more than 3 players
+
+            var claimedRoutes = routeCollection.Where(r => r.IsClaimed).ToList();
+
+            foreach (var claimedRoute in claimedRoutes)
+            {
+                routeCollection.Remove(claimedRoute);
+            }
+
+            if (claimedRoutes.Count == 1 && numberOfPlayers < GameConstants.MinNumberOfPlayersForWhichDoubleRoutesCanBeUsed)
+            {
+                return true;
+            }
+
+            if (claimedRoutes.Count == 2 && numberOfPlayers >= GameConstants.MinNumberOfPlayersForWhichDoubleRoutesCanBeUsed)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 

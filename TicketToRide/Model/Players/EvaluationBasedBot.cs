@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.TagHelpers;
-using TicketToRide.Model.Cards;
+﻿using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.GameBoard;
 using TicketToRide.Moves;
@@ -27,37 +26,59 @@ namespace TicketToRide.Model.Players
 
             if (possibleMoves.ChooseDestinationCardMoves.Count > 0)
             {
-                var (move, combinedPath, Cost) = ChooseBestDestinationCardsCombination(possibleMoves.ChooseDestinationCardMoves, playerCards, game.GameTurn == 1);
+                var (move, combinedPath, Cost) = ChooseBestDestinationCardsCombination(possibleMoves.ChooseDestinationCardMoves, playerCards, game.GameTurn == 1, game.Players.Count);
                 bestPath = combinedPath;
                 UpdateNeededTrainCards(bestPath, playerCards);
                 return move;
             }
 
-            if (bestPath.Count != 0 && !IsPathStillAvailabe(bestPath, game.Board.RouteGraph))
-            {
-                //compute new best route 
-                bestPath = ComputeNewBestPath(PendingDestinationCards, playerCards);
-            }
+            bestPath = ComputeNewBestPath(PendingDestinationCards, playerCards, game.Players.Count);
+            //if (bestPath.Count != 0 && !IsPathStillAvailabe(bestPath, game.Board.RouteGraph))
+            //{
+            //    //compute new best route 
+            //    bestPath = ComputeNewBestPath(PendingDestinationCards, playerCards);
+            //}
 
             if (bestPath.Count > 0)
             {
                 UpdateNeededTrainCards(bestPath, playerCards);
             }
 
-            var evaluatedMoves = EvaluateAllPossibleMoves(possibleMoves, playerCards);
-            return evaluatedMoves.First().move;
+            var evaluatedMoves = EvaluateAllPossibleMoves(possibleMoves, playerCards, game.Players);
+            var bestMove = evaluatedMoves.First().move;
+
+            if (bestMove is ClaimRouteMove bestClaimRouteMove)
+            {
+                // Filter ClaimRouteMoves with the same origin and destination as the best move
+                var matchingClaimRouteMoves = evaluatedMoves
+                    .Where(e => e.move is ClaimRouteMove claimRouteMove &&
+                                claimRouteMove.Origin == bestClaimRouteMove.Origin &&
+                                claimRouteMove.Destination == bestClaimRouteMove.Destination)
+                    .OrderByDescending(e => e.secondaryPoints)
+                    .ToList();
+
+                // Assuming you want to select the move with the highest secondary points
+                var selectedBestClaimRouteMove = matchingClaimRouteMoves.FirstOrDefault();
+
+                return selectedBestClaimRouteMove.move;
+            }
+
+            return bestMove;
         }
 
-        private List<(Move move, double points)> EvaluateAllPossibleMoves(PossibleMoves possibleMoves, Dictionary<TrainColor, int> playerCards)
+        private List<(Move move, double points, double secondaryPoints)> EvaluateAllPossibleMoves(
+            PossibleMoves possibleMoves,
+            Dictionary<TrainColor, int> playerCards,
+            List<Player> players)
         {
-            var listOfMovesAndPoints = new List<(Move move, double points)>();
+            var listOfMovesAndPoints = new List<(Move move, double points, double secondaryPoints)>();
 
             if (possibleMoves.DrawTrainCardMoves.Count > 0)
             {
                 foreach (var move in possibleMoves.DrawTrainCardMoves)
                 {
                     var points = EvaluateDrawTrainCardMove(move);
-                    listOfMovesAndPoints.Add((move, points));
+                    listOfMovesAndPoints.Add((move, points, 0.0));
                 }
             }
 
@@ -65,15 +86,15 @@ namespace TicketToRide.Model.Players
             {
                 foreach (var move in possibleMoves.ClaimRouteMoves)
                 {
-                    var points = EvaluateClaimRouteMove(move, playerCards);
-                    listOfMovesAndPoints.Add((move, points));
+                    (var points, var secondaryPoints) = EvaluateClaimRouteMove(move, playerCards);
+                    listOfMovesAndPoints.Add((move, points, secondaryPoints));
                 }
             }
 
             if (possibleMoves.DrawDestinationCardMove != null)
             {
-                var points = EvaluateDrawDestinationCardMove(possibleMoves.DrawDestinationCardMove);
-                listOfMovesAndPoints.Add((possibleMoves.DrawDestinationCardMove, points));
+                var points = EvaluateDrawDestinationCardMove(possibleMoves.DrawDestinationCardMove, players);
+                listOfMovesAndPoints.Add((possibleMoves.DrawDestinationCardMove, points, 0.0));
             }
 
             return listOfMovesAndPoints.OrderByDescending(m => m.points).ToList();
@@ -109,10 +130,22 @@ namespace TicketToRide.Model.Players
             return 0.0;
         }
 
-        private double EvaluateClaimRouteMove(ClaimRouteMove move, Dictionary<TrainColor, int> playerCards)
+        private (double points, double secondaryPoints) EvaluateClaimRouteMove(ClaimRouteMove move, Dictionary<TrainColor, int> playerCards)
         {
+            //points : points for selecting that route ;
+            //secondaryPoints: points for how the route will be built
             var points = 0.0;
+            var secondaryPoints = 0.0;
+            var priority = 0;
 
+            if(move.Route.ElementAt(0).Length <= 2)
+            {
+                priority++;
+            }
+            if(move.Route.ElementAt(0).Color == TrainColor.Grey)
+            {
+                priority++;
+            }
             //first, add the points relating to the route selection
 
             //if the player still has destination cards to complete
@@ -120,11 +153,20 @@ namespace TicketToRide.Model.Players
             {
                 //if part of path
                 if (bestPath.Contains(move.Route.ElementAt(0)))
-                {
-                    points += 1.0;
-                    var routePoints = move.Route.ElementAt(0).PointValue;
+                { 
+                    var equivalentClaimedRoute = ClaimedRoutes.GetEquivalentEdge(move.Route.ElementAt(0));
+                    if(equivalentClaimedRoute == null)
+                    {
+                        //route is not claimed
+                        var routePoints = move.Route.ElementAt(0).PointValue;
 
-                    points = 2 + routePoints + totalPathPoints - ComputeUnbuildRoutePointsFromPath();
+                        points = 2 + routePoints + totalPathPoints - ComputeUnbuildRoutePointsFromPath() + priority;
+                    }
+                    //var isClaimed = bestPath.First(r => r.Equals(move.Route.ElementAt(0))).IsClaimed;
+                    else
+                    {
+                        points += -100.0; //dont build a route which is already claimed 
+                    }
                 }
                 //else , if not part of path
                 else
@@ -140,9 +182,9 @@ namespace TicketToRide.Model.Players
             }
 
             //then, add the points relating to with which cards the route will be built
-            points += EvaluateBuildRouteMove(move, playerCards);
+            secondaryPoints += EvaluateBuildRouteMove(move, playerCards);
 
-            return points;
+            return (points, secondaryPoints);
         }
 
         private int EvaluateBuildRouteMove(ClaimRouteMove move, Dictionary<TrainColor, int> playerCards)
@@ -191,14 +233,24 @@ namespace TicketToRide.Model.Players
             return 0;
         }
 
-        private double EvaluateDrawDestinationCardMove(DrawDestinationCardMove move)
+        private double EvaluateDrawDestinationCardMove(DrawDestinationCardMove move, List<Player> players)
         {
             if (PendingDestinationCards.Count > 0)
             {
                 return -1.0;
             }
 
-            return -15.0 + RemainingTrains;
+            var points = -10.0 + RemainingTrains;
+            
+            foreach(var player in players)
+            {
+                if(player.RemainingTrains < 10)
+                {
+                    points -= 10.0;
+                }
+            }
+
+            return points;
         }
 
         private int ComputeUnbuildRoutePointsFromPath()
@@ -213,10 +265,11 @@ namespace TicketToRide.Model.Players
             }
             return points;
         }
-        private List<GameBoard.Route> ComputeNewBestPath(List<DestinationCard> destinationCards, Dictionary<TrainColor, int> playerCards)
+
+        private List<GameBoard.Route> ComputeNewBestPath(List<DestinationCard> destinationCards, Dictionary<TrainColor, int> playerCards, int numberOfPlayers)
         {
             List<(List<GameBoard.Route> CombinedPath, double Cost, int TotalPoints)> ticketCombinations = new List<(List<GameBoard.Route>, double, int)>();
-            var validPathsToCompleteTickets = GetAllValidPathsBetweenDestinations(destinationCards);
+            var validPathsToCompleteTickets = GetAllValidPathsBetweenDestinations(destinationCards, numberOfPlayers, 10);
 
             // Evaluate the cost for each validPathsToCompleteTickets and choose the one with the smallest cost
             foreach (var pathCombination in validPathsToCompleteTickets)
@@ -225,12 +278,13 @@ namespace TicketToRide.Model.Players
                 ticketCombinations.Add((pathCombination.Path, cost, pathCombination.Points));
             }
 
-            var (CombinedPath, Cost, TotalPoints) = ticketCombinations.OrderBy(t => t.Cost).FirstOrDefault();
+            var orderedTicketCombinations = ticketCombinations.OrderBy(t => t.Cost).ToList();
+            var (CombinedPath, Cost, TotalPoints) = orderedTicketCombinations.FirstOrDefault();
             totalPathPoints = TotalPoints;
-            return CombinedPath;
+            return CombinedPath ?? new List<GameBoard.Route>();
         }
 
-        private List<(List<GameBoard.Route> Path, int Points)> GetAllValidPathsBetweenDestinations(List<DestinationCard> destinationCards)
+        private List<(List<GameBoard.Route> Path, int Points)> GetAllValidPathsBetweenDestinations(List<DestinationCard> destinationCards, int numberOfPlayers, int maxPaths = 100)
         {
             //foreach 2 cities from the destination cards, computes those paths between them
             //then, computes unions and return valid paths for reaching all the cities on the destination cards
@@ -238,7 +292,7 @@ namespace TicketToRide.Model.Players
 
             foreach (var ticket in destinationCards)
             {
-                var paths = GameRouteGraph.FindAllPaths(ticket.Origin, ticket.Destination, false);
+                var paths = GameRouteGraph.FindAllPaths(ticket.Origin, ticket.Destination, false, Color, maxPaths, numberOfPlayers);
                 if (paths.Any())
                 {
                     List<(List<GameBoard.Route>, int)> pathsForTicket = new List<(List<GameBoard.Route>, int)>();
@@ -254,8 +308,11 @@ namespace TicketToRide.Model.Players
             // Generate all combinations of paths for the current combination of destination cards
             var allUnionPaths = GenerateAllValidPathCombinations(pathsPerTicket, destinationCards.Count);
 
-            //discard the ones that take more than 45 cards
-            var validPaths = allUnionPaths.Where(p => p.Path.Sum(r => r.Length) <= 45).ToList();
+            //when generating a new path, discard the ones that are too long
+            var maxPathLength = RemainingTrains == 45 ? 35 : RemainingTrains;
+
+            var validPaths = allUnionPaths.Where(p => p.Path.Where(r=>!r.CanPlayerUseRoute(Color)).Sum(r => r.Length) <= maxPathLength).ToList();
+           
 
             // Sort the remaining combinations by the shortest path length
             validPaths.Sort((a, b) => a.Path.Sum(r => r.Length).CompareTo(b.Path.Sum(r => r.Length)));
@@ -266,7 +323,8 @@ namespace TicketToRide.Model.Players
         private (ChooseDestinationCardMove move, List<GameBoard.Route> CombinedPath, double Cost) ChooseBestDestinationCardsCombination(
             List<ChooseDestinationCardMove> possibleMoves,
             Dictionary<TrainColor, int> playerTrainCards,
-            bool isFirstTurn)
+            bool isFirstTurn,
+            int numberOfPlayers)
         {
             List<(ChooseDestinationCardMove move, List<GameBoard.Route> CombinedPath, double Cost, int TotalPoints)> ticketCombinations = new List<(ChooseDestinationCardMove, List<GameBoard.Route>, double, int)>();
 
@@ -276,7 +334,7 @@ namespace TicketToRide.Model.Players
 
             foreach (var combination in possibleMoves)
             {
-                var validPaths = GetAllValidPathsBetweenDestinations(combination.ChosenDestinationCards);
+                var validPaths = GetAllValidPathsBetweenDestinations(combination.ChosenDestinationCards, numberOfPlayers);
 
                 if (validPaths.Count() == 0)
                 {
@@ -290,20 +348,32 @@ namespace TicketToRide.Model.Players
                     foreach (var pathCombination in validPaths)
                     {
                         double cost = CalculateCombinedPathCost(pathCombination.Path, playerTrainCards) - pathCombination.Points * 0.5;
-                        cost = -1 * cost;
                         ticketCombinations.Add((combination, pathCombination.Path, cost, pathCombination.Points));
                     }
                 }
 
             }
 
-            var (move, CombinedPath, Cost, TotalPoints) = ticketCombinations.OrderBy(t => t.Cost).FirstOrDefault();
+            var orderedTicketCombinations = ticketCombinations.OrderBy(t => t.Cost).ToList();
+            var (move, CombinedPath, Cost, TotalPoints) = orderedTicketCombinations.FirstOrDefault();
             totalPathPoints = TotalPoints;
             return (move, CombinedPath, Cost);
         }
 
         private double CalculateCombinedPathCost(List<GameBoard.Route> combinedPath, Dictionary<TrainColor, int> playerTrainCards)
         {
+            ////calculate points/ trains
+            int trains = 0;
+            double points = 0;
+            foreach (var route in combinedPath)
+            {
+                points += route.PointValue;
+                trains += route.Length;
+            }
+
+            var pointsPerTrains = points / trains;
+
+            //return points / trains;
             double cost = 0;
 
             var groupedByColor = combinedPath.GroupBy(r => r.Color);
@@ -357,8 +427,25 @@ namespace TicketToRide.Model.Players
             // Base case: If the current combination contains paths from all destination cards, add it to the list of valid combinations
             if (currentCombination.Count == numDestinationCards)
             {
-                // Flatten the list of paths and calculate the total points
-                var combinedPath = currentCombination.SelectMany(x => x.Path).ToList();
+                // Create a HashSet to track unique origin-destination pairs
+                var routeSet = new HashSet<(City, City)>();
+                var combinedPath = new List<GameBoard.Route>();
+
+                // Flatten the list of paths and add only unique routes based on origin-destination
+                foreach (var route in currentCombination.SelectMany(x => x.Path))
+                {
+                    // Create a tuple for the route's origin-destination pair
+                    var routePair = (route.Origin, route.Destination);
+
+                    // Add route to the combinedPath if it's unique
+                    if (!routeSet.Contains(routePair))
+                    {
+                        combinedPath.Add(route);
+                        routeSet.Add(routePair);
+                    }
+                }
+
+                // Calculate the total points
                 var totalPoints = currentCombination.Sum(x => x.Points);
 
                 validCombinations.Add((combinedPath, totalPoints));

@@ -116,37 +116,15 @@ namespace TicketToRide.Model.GameBoard
             return Players.ElementAt(playerIndex).Name;
         }
 
-        public void MarkRouteAsClaimed(City origin, City destination, Player player, TrainColor colorUsed)
+        public Route MarkRouteAsClaimed(City origin, City destination, Player player, TrainColor colorUsed)
         {
             var foundRoute = Board.Routes.GetRoute(origin, destination, colorUsed, true);
-
-            ////find out if the route is a double route
-            //var doubleRoutes = Board.Routes.GetRoute(origin, destination);
-
-            //if (doubleRoutes.Count > 1)
-            //{
-            //    //is double route, so check if the game is multiplayer
-            //    var numberOfPlayers = Players.Count;
-            //    if (numberOfPlayers < GameConstants.MinNumberOfPlayersForWhichDoubleRoutesCanBeUsed)
-            //    {
-            //        //remove both edges from route graph
-            //        Board.RouteGraph.RemoveEdges(doubleRoutes);
-            //    }
-            //    else
-            //    {
-            //        Board.RouteGraph.RemoveEdge(foundRoute);
-            //    }
-            //}
-            ////otherwise, just remove the found route
-            //else
-            //{
-            //    Board.RouteGraph.RemoveEdge(foundRoute);
-            //}
 
             ArgumentNullException.ThrowIfNull(nameof(foundRoute));
 
             foundRoute.IsClaimed = true;
             foundRoute.ClaimedBy = player.Color;
+            return foundRoute;
         }
 
         public void EndGame()

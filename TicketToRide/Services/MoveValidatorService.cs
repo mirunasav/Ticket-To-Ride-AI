@@ -92,14 +92,15 @@ namespace TicketToRide.Services
             return routeService.CanPlayerClaimRoute(claimRouteMove, numberOfPlayers);
         }
 
-        public MakeMoveResponse CanRouteBeClaimed(CanClaimRouteMove canClaimRouteMove, int playerTrainsLeft = int.MaxValue)
+        public MakeMoveResponse CanRouteBeClaimed(CanClaimRouteMove canClaimRouteMove, PlayerColor playerColor = default, int playerTrainsLeft = int.MaxValue)
         {
+            var equivalentRoutes = routeService.GetRoute(canClaimRouteMove.Origin, canClaimRouteMove.Destination); 
             //check that the route exists and is not occupied
-            if(canClaimRouteMove.Route is null || canClaimRouteMove.Route.Count == 0)
+            if (canClaimRouteMove.Route is null || canClaimRouteMove.Route.Count == 0)
             {
-                canClaimRouteMove.Route = routeService.GetRoute(canClaimRouteMove.Origin, canClaimRouteMove.Destination);
+                canClaimRouteMove.Route = equivalentRoutes;
             }
-
+            
             if (canClaimRouteMove.Route is null || canClaimRouteMove.Route.Count == 0)
             {
                 return new MakeMoveResponse
@@ -109,7 +110,16 @@ namespace TicketToRide.Services
                 };
             }
 
-            if(canClaimRouteMove.Route.ElementAt(0).Length > playerTrainsLeft)
+            if (equivalentRoutes.Any(r => r.IsClaimed && r.ClaimedBy == playerColor))
+            {
+                return new MakeMoveResponse
+                {
+                    IsValid = false,
+                    Message = InvalidMovesMessages.PlayerAlreadyClaimedRoute
+                };
+            }
+
+            if (canClaimRouteMove.Route.ElementAt(0).Length > playerTrainsLeft)
             {
                 return new MakeMoveResponse
                 {
@@ -120,7 +130,7 @@ namespace TicketToRide.Services
 
             var numberOfPlayers = gameProvider.GetNumberOfPlayers();
 
-            var isClaimed = routeService.IsRouteClaimed(canClaimRouteMove.Route, numberOfPlayers);
+            var isClaimed = routeService.IsRouteClaimed(equivalentRoutes, numberOfPlayers);
 
             if (isClaimed)
             {
