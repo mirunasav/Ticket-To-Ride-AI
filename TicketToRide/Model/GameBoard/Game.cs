@@ -116,7 +116,7 @@ namespace TicketToRide.Model.GameBoard
             return Players.ElementAt(playerIndex).Name;
         }
 
-        public void MarkRouteAsClaimed(City origin, City destination, Player player, TrainColor colorUsed)
+        public Route MarkRouteAsClaimed(City origin, City destination, Player player, TrainColor colorUsed)
         {
             var foundRoute = Board.Routes.GetRoute(origin, destination, colorUsed, true);
 
@@ -147,6 +147,7 @@ namespace TicketToRide.Model.GameBoard
 
             foundRoute.IsClaimed = true;
             foundRoute.ClaimedBy = player.Color;
+            return foundRoute;
         }
 
         public void EndGame()

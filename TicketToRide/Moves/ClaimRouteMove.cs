@@ -60,16 +60,11 @@ namespace TicketToRide.Moves
             player.Points += pointValue;
 
             //mark route as claimed
-            game.MarkRouteAsClaimed(Route.ElementAt(0).Origin, Route.ElementAt(0).Destination, player, ColorUsed);
+            var foundRoute = game.MarkRouteAsClaimed(Route.ElementAt(0).Origin, Route.ElementAt(0).Destination, player, ColorUsed);
 
             game.Board.DiscardPile.AddRange(cardsToDiscard);
 
-            player.AddCompletedRoute(Route.Where(r =>
-            (r.Color == ColorUsed
-            || r.Color == TrainColor.Grey
-            || ColorUsed == TrainColor.Locomotive)
-            && (r.ClaimedBy == player.Color))
-              .First());
+            player.AddCompletedRoute(foundRoute);
 
             var newlyCompletedDestinations = player.GetNewlyCompletedDestinations();
 

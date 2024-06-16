@@ -48,6 +48,15 @@ namespace TicketToRide.Model.GameBoard
             this.Length = Length;
         }
 
+        public Route(Route route)
+        {
+            this.Origin = route.Origin;
+            this.Destination =route. Destination;
+            this.Color = route.Color;
+            this.Length = route.Length;
+            this.IsClaimed = route.IsClaimed;
+            this.ClaimedBy = route.ClaimedBy;
+        }
         public bool CanPlayerUseRoute(PlayerColor playerColor)
         {
             if (IsClaimed && ClaimedBy == playerColor)

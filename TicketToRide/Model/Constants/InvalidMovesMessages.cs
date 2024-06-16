@@ -20,6 +20,7 @@ namespace TicketToRide.Model.Constants
         public const string DestinationDoesNotExist = "The destination with this origin and this destination does not exist";
         public const string DestinationIsNotAnOption = "This destination was not an option";
         public const string InvalidCityNumber = "The destination or origin cities are invalid";
+        public const string PlayerAlreadyClaimedRoute = "The player has already claimed this route";
 
         public const string NotEnoughDestinationCards = "There are not enough destination cards left";
 

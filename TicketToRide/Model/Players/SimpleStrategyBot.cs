@@ -59,7 +59,7 @@ namespace TicketToRide.Model.Players
                 return bestMove;
             }
 
-            var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(PendingDestinationCards, Color, game.Board.Routes);
+            var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(PendingDestinationCards, Color, game.Board.Routes, game.Players.Count);
 
             if (possibleMoves.ClaimRouteMoves.Count > 0)
             {
@@ -201,7 +201,7 @@ namespace TicketToRide.Model.Players
             //foreach card calculate a score : points / needed trains to finish
             foreach (var card in destinationCards)
             {
-                var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(new List<DestinationCard> { card }, Color, game.Board.Routes);
+                var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(new List<DestinationCard> { card }, Color, game.Board.Routes, game.Players.Count);
 
                 var routesStillNeeded = shortestPathRoutes.Where(r => !ClaimedRoutes.ContainsRoute(r)).ToList();
 
