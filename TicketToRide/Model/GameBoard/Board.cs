@@ -140,9 +140,9 @@ namespace TicketToRide.Model.GameBoard
 
         private void CreateRouteGraph()
         {
-            RouteGraph = new RouteGraph(Routes.Routes);
+           RouteGraph = new RouteGraph(Routes.Routes);
         }
-
+       
         private void CreateDestinationCards()
         {
             DestinationCards.Add(new DestinationCard(City.NewYork, City.Atlanta, 6));
@@ -206,14 +206,14 @@ namespace TicketToRide.Model.GameBoard
             return cards;
         }
 
-        public void RefillFaceUpDeck()
+        private void RefillFaceUpDeck()
         {
             while (FaceUpDeck.Count < 5)
             {
                 if (Deck.Count > 0)
                 {
                     var newCard = Deck.Pop(1);
-                    if (newCard != null)
+                    if(newCard != null)
                     {
                         FaceUpDeck.AddRange(newCard);
                     }
@@ -222,6 +222,7 @@ namespace TicketToRide.Model.GameBoard
                 {
                     break;
                 }
+
             }
         }
 

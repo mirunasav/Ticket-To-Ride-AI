@@ -58,7 +58,7 @@ namespace TicketToRide.Model.Players
 
             var allDestinationCards = CompletedDestinationCards.Union(PendingDestinationCards).ToList();
 
-            shortestPathRoutes = GameRouteGraph.GetRemainingRoutesToConnectAllCities(allDestinationCards, Color, game.Board.Routes, game.Players.Count);
+            shortestPathRoutes = GameRouteGraph.GetRemainingRoutesToConnectAllCities(allDestinationCards, Color, game.Board.Routes);
 
             if (possibleMoves.ClaimRouteMoves.Count > 0)
             {

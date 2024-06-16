@@ -623,24 +623,6 @@ namespace TicketToRide.Controllers
                 playerTurn = game.PlayerTurn
             });
         }
-
-        [HttpGet]
-        public IActionResult GetRoutes()
-        {
-            var game = gameService.GetGameInstance();
-
-            var groupedRoutes = game.Board.Routes.Routes
-           .GroupBy(r => r.Length)
-           .Select(group => new
-           {
-               length = group.Key,
-               count = group.Count()
-           })
-           .OrderByDescending(group => group.length)
-           .ToList();
-
-            return Json(groupedRoutes);
-        }
         #endregion
 
     }

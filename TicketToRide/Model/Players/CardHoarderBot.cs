@@ -92,18 +92,7 @@ namespace TicketToRide.Model.Players
                         return drawTrainCardMove;
                     }
                 }
-               
-                var hiddenDeckMove = possibleMoves.DrawTrainCardMoves.Where(d => d.faceUpCardIndex == -1).FirstOrDefault();
-               
-                if (hiddenDeckMove is null)
-                {
-                    //draw a random face up card
-                    return possibleMoves.DrawTrainCardMoves.First();
-                }
-                else
-                {
-                    return hiddenDeckMove;
-                }
+                return possibleMoves.DrawTrainCardMoves.Where(d => d.faceUpCardIndex == -1).First();
             }
 
             return null;

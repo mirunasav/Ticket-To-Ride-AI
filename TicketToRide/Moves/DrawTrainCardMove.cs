@@ -45,7 +45,7 @@ namespace TicketToRide.Moves
             else
             {
                 //take first card from deck
-                if (game.Board.Deck.Count == 0)
+                if(game.Board.Deck.Count == 0)
                 {
                     game.Board.RefillDeck();
                 }
@@ -59,32 +59,9 @@ namespace TicketToRide.Moves
 
             //if the player still has to draw cards
             //make the locomotives unavailable
-            if (newGameState == GameState.DrawingTrainCards)
+            if(newGameState == GameState.DrawingTrainCards)
             {
-                //if the only cards left are face up locomotives
-                var availableCardsLeft = game.Board.FaceUpDeck.Where(c => c.IsAvailable)
-                    .Union(game.Board.Deck);
-
-                //there are no face up deck cards which are not locomotives. try to refill deck and try again
-                if (availableCardsLeft.Count() <= 1)
-                {
-                    //refill decks and see if any locomotives are available now
-                    game.Board.RefillDeck();
-                    game.Board.RefillFaceUpDeck();
-                    availableCardsLeft = game.Board.FaceUpDeck.Where(c => c.IsAvailable)
-                        .Union(game.Board.Deck.Where(c => c.IsAvailable));
-
-                    //if there are still not enough cards, skip this turn
-                    if (availableCardsLeft.Count() <= 1)
-                    {
-                        game.Board.ChangeFaceUpLocomotiveStatus(isAvailable: true);
-                        game.UpdateStateNextPlayerTurn();
-                    }
-                }
-                else
-                {
-                    game.Board.ChangeFaceUpLocomotiveStatus(isAvailable: false);
-                }
+                game.Board.ChangeFaceUpLocomotiveStatus(isAvailable: false);
             }
 
             //if the player's turn has finished, change status of locomotives to available

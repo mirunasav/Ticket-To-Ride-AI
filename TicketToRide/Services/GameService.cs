@@ -124,10 +124,7 @@ namespace TicketToRide.Services
                 };
             }
 
-            var validateMove = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove,
-                game.GetPlayer(request.PlayerIndex).Color,
-                 game.GetPlayer(request.PlayerIndex).RemainingTrains);
-
+            var validateMove = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove, game.GetPlayer(request.PlayerIndex).RemainingTrains);
             if (!validateMove.IsValid)
             {
                 return validateMove;
@@ -402,17 +399,7 @@ namespace TicketToRide.Services
                 game.GameState == GameState.DecidingAction ||
                 game.GameState == GameState.DrawingTrainCards)
             {
-                var availableCards = game.Board.FaceUpDeck.Where(c => c.IsAvailable).Count()
-                   + game.Board.Deck.Count
-                   + game.Board.DiscardPile.Count;
-
-                if ((game.GameState != GameState.DrawingTrainCards
-                    && availableCards >= 2)
-                    || ((game.GameState == GameState.DrawingTrainCards)
-                    && availableCards >= 1))
-                {
-                    listOfDrawTrainCardMoves.AddRange(GetAllPossibleDrawTrainCardMoves(playerIndex));
-                }
+                listOfDrawTrainCardMoves.AddRange(GetAllPossibleDrawTrainCardMoves(playerIndex));
             }
 
             //add claimRouteMoves
@@ -449,9 +436,7 @@ namespace TicketToRide.Services
                 //see whether they can be claimed
                 var canClaimRouteMove = new CanClaimRouteMove(playerIndex, new List<Model.GameBoard.Route> { route });
 
-                var canRouteBeClaimed = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove,
-                    game.GetPlayer(playerIndex).Color,
-                    game.GetPlayer(playerIndex).RemainingTrains);
+                var canRouteBeClaimed = moveValidatorService.CanRouteBeClaimed(canClaimRouteMove, game.GetPlayer(playerIndex).RemainingTrains);
 
                 if (!canRouteBeClaimed.IsValid)
                 {

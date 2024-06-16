@@ -49,14 +49,17 @@ namespace TicketToRide.Model.Players
                     .Where(c => c.ChosenDestinationCards.Count == 2 &&
                     c.ChosenDestinationCards.Contains(bestPointsCard));
 
-                bestMoveQuery = bestMoveQuery.Where(c => c.ChosenDestinationCards.Contains(leastPointsCard));
+                if (leastPointsCard.PointValue <= 11)
+                {
+                    bestMoveQuery = bestMoveQuery.Where(c => c.ChosenDestinationCards.Contains(leastPointsCard));
+                }
 
                 bestMove = bestMoveQuery.First();
 
                 return bestMove;
             }
 
-            var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(PendingDestinationCards, Color, game.Board.Routes, game.Players.Count);
+            var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(PendingDestinationCards, Color, game.Board.Routes);
 
             if (possibleMoves.ClaimRouteMoves.Count > 0)
             {
@@ -83,7 +86,7 @@ namespace TicketToRide.Model.Players
                     //the cities are unreachable so there is no goal to work to.
                     //if the turn is less than 30 and the number of players is 2, get more tickets
 
-                    if (game.Players.Count == 2 && game.GameTurn <= 40)
+                    if(game.Players.Count == 2 && game.GameTurn <= 40)
                     {
                         return possibleMoves.DrawDestinationCardMove;
                     }
@@ -198,7 +201,7 @@ namespace TicketToRide.Model.Players
             //foreach card calculate a score : points / needed trains to finish
             foreach (var card in destinationCards)
             {
-                var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(new List<DestinationCard> { card }, Color, game.Board.Routes, game.Players.Count);
+                var shortestPathRoutes = GameRouteGraph.FindAllShortestPathsBetweenDestinationCards(new List<DestinationCard> { card }, Color, game.Board.Routes);
 
                 var routesStillNeeded = shortestPathRoutes.Where(r => !ClaimedRoutes.ContainsRoute(r)).ToList();
 
