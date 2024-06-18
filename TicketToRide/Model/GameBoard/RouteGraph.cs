@@ -352,6 +352,73 @@ namespace TicketToRide.Model.GameBoard
             return (distances[endCity], path);
         }
 
+        public (int, List<Edge>) FindShortestPathWithoutRoute(City startCity, City endCity, PlayerColor playerColor, int numberOfPlayers)
+        {
+            var distances = Cities.ToDictionary(city => city, city => int.MaxValue);
+            var previousEdges = new Dictionary<City, Edge>();
+            var priorityQueue = new PriorityQueue<(City city, int distance), int>();
+
+            distances[startCity] = 0;
+            priorityQueue.Enqueue((startCity, 0), 0);
+
+            while (priorityQueue.Count > 0)
+            {
+                var (currentCity, currentDistance) = priorityQueue.Dequeue();
+
+                if (currentCity == endCity)
+                {
+                    break;
+                }
+
+                foreach (var edge in Edges.Where(e =>
+                (e.Origin == currentCity || e.Destination == currentCity)
+                && !(e.Origin == startCity && e.Destination == endCity)
+                && (e.CanPlayerUseEdge(playerColor) || e.CanBeClaimed(numberOfPlayers))))
+                {
+                    
+                    var relevantEdge = edge;
+                    if (edge.Routes.Count > 1)
+                    {
+                        relevantEdge = edge.GetRelevantEdge(edge, playerColor);
+                    }
+
+                    var neighborCity = edge.Origin == currentCity ? edge.Destination : edge.Origin;
+                    int distance = currentDistance + edge.Cost;
+                    if (distance < distances[neighborCity])
+                    {
+                        distances[neighborCity] = distance;
+                        previousEdges[neighborCity] = relevantEdge;
+                        priorityQueue.Enqueue((neighborCity, distance), distance);
+                    }
+                }
+            }
+
+            if (distances[endCity] == int.MaxValue)
+            {
+                return (int.MaxValue, new List<Edge>());
+            }
+
+            List<Edge> path = new List<Edge>();
+            City? current = endCity;
+
+            while (current != null && current != startCity)
+            {
+                if (previousEdges.TryGetValue((City)current, out Edge edge))
+                {
+                    path.Add(edge);
+                    current = edge.Origin == current ? edge.Destination : edge.Origin;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            //remove the paths which are already claimed?
+            path.Reverse();
+            return (distances[endCity], path);
+        }
+
         public Dictionary<TrainColor, int> GetLeastTrainColorsNeededForShorthestPaths(List<Route> shortestPathRoutes)
         {
             var trainCardsDictionary = new Dictionary<TrainColor, int>();

@@ -64,6 +64,8 @@ namespace TicketToRide.Moves
                 game.UpdateStateNextPlayerTurn();
             }
 
+            game.GetPlayer(PlayerIndex).GetNewlyCompletedDestinations();
+
             return new MakeMoveResponse
             {
                 IsValid = true,

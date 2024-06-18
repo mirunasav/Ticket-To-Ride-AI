@@ -18,11 +18,19 @@ namespace TicketToRide.Controllers.Responses
         public int LongestContPathLength { get; set; }
 
         public int LongestContPathPlayerIndex { get; set; }
+        public Dictionary<string, int> routesClaimed { get; set; } = new Dictionary<string, int>();
+
+        public Dictionary<string, int> numberOfRoutesClaimedForCity { get; set; } = new Dictionary<string, int>();
+
+        public Dictionary<string, int> numberOfDestinationCardsInWinningGames { get; set; } = new Dictionary<string, int>();
 
         public RunGameResponse(
             string gameLogFile,
             string initialGameStateFile,
             string trainCardDeckStatesFileName,
+            Dictionary<string, int> routesClaimed,
+            Dictionary<string, int> numberOfRoutesClaimedForCity,
+            Dictionary<string, int> numberOfDestinationCardsInWinningGames,
             bool isValid,
             string message,
             List<Player> players, 
@@ -39,6 +47,9 @@ namespace TicketToRide.Controllers.Responses
             Winners = winners;
             LongestContPathLength = longestContPathLength;
             LongestContPathPlayerIndex = longestContPathPlayerIndex;
+            this.routesClaimed = routesClaimed;
+            this.numberOfRoutesClaimedForCity = numberOfRoutesClaimedForCity;
+            this.numberOfDestinationCardsInWinningGames = numberOfDestinationCardsInWinningGames;
         }
     }
 }

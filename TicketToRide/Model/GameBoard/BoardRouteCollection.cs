@@ -114,10 +114,8 @@ namespace TicketToRide.Model.GameBoard
             City origin,
             City destination,
             TrainColor trainColor = default,
-            int length = default,
-            bool isClaimed = false)
+            int length = default)
         {
-
             var key1 = new RouteOriginDestination(origin, destination);
 
             var routeList = new List<Route>();
@@ -139,11 +137,6 @@ namespace TicketToRide.Model.GameBoard
                 routeQuery = routeQuery.Where(r => r.Length == length);
             }
 
-            if (isClaimed)
-            {
-                routeQuery = routeQuery.Where(r => r.IsClaimed == isClaimed);
-            }
-
             return routeQuery.ToList();
         }
 
@@ -159,10 +152,10 @@ namespace TicketToRide.Model.GameBoard
             }
 
             var routesQuery = routes.Where(r => (r.Color == trainColor || r.Color == TrainColor.Grey) &&
-               ((r.Origin == origin && r.Destination == destination) || (r.Origin == destination && r.Destination == origin)));
+               ((r.Origin == origin && r.Destination == destination) || (r.Origin == destination && r.Destination == origin))).ToList();
             if (unclaimed)
             {
-                routesQuery = routesQuery.Where(r => r.IsClaimed == false);
+                routesQuery = routesQuery.Where(r => r.IsClaimed == false).ToList();
             }
 
             return routesQuery.FirstOrDefault();

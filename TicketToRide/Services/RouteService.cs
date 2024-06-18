@@ -75,7 +75,7 @@ namespace TicketToRide.Services
         {
             return gameProvider.GetGame().Board.Routes.GetRoute(route);
         }
-        public bool IsRouteClaimed(IList<Model.GameBoard.Route> routeCollection, int numberOfPlayers)
+        public bool IsRouteClaimed(IList<Model.GameBoard.Route> routeCollection, int numberOfPlayers, TrainColor color = default)
         {
             //if the route is not double, just check if the first element of the collection 
             //is claimed

@@ -434,6 +434,10 @@ namespace TicketToRide.Services
 
             foreach (var route in routes)
             {
+                if (route.IsClaimed)
+                {
+                    continue;
+                }
 
                 //see whether they can be claimed
                 var canClaimRouteMove = new CanClaimRouteMove(playerIndex, new List<Model.GameBoard.Route> { route });
@@ -529,10 +533,17 @@ namespace TicketToRide.Services
                 message = ValidMovesMessages.GameHasEnded;
             };
 
+            (Dictionary<string, int> routesClaimed,
+                Dictionary<string, int> numberOfRoutesClaimedForCity,
+                Dictionary<string, int> numberOfDestinationCardsInWinningGames) = GetNumberOfRoutesClaimedAnCitiesChosen(game.Players);
+
             return new RunGameResponse(
                 game.GameLog.GameLogFileName,
                 game.GameLog.InitialGameStateFileName,
                 game.GameLog.TrainCardsFileName,
+                routesClaimed,
+                numberOfRoutesClaimedForCity,
+                numberOfDestinationCardsInWinningGames,
                 true,
                 message,
                 game.Players,
@@ -649,6 +660,44 @@ namespace TicketToRide.Services
                 gameStatistics.NumberOfLongestPathPrizes[response.LongestContPathPlayerIndex] = 1;
             }
 
+            foreach (var city in response.numberOfRoutesClaimedForCity.Keys)
+            {
+                if (gameStatistics.numberOfRoutesClaimedForCity.ContainsKey(city))
+                {
+                    gameStatistics.numberOfRoutesClaimedForCity[city] += response.numberOfRoutesClaimedForCity[city];
+                }
+                else
+                {
+                    gameStatistics.numberOfRoutesClaimedForCity[city] = response.numberOfRoutesClaimedForCity[city];
+                }
+            }
+
+
+            foreach (var route in response.routesClaimed.Keys)
+            {
+                if (gameStatistics.routesClaimed.ContainsKey(route))
+                {
+                    gameStatistics.routesClaimed[route] += response.routesClaimed[route];
+                }
+                else
+                {
+                    gameStatistics.routesClaimed[route] = response.routesClaimed[route];
+                }
+            }
+
+            foreach (var destinationCard in response.numberOfDestinationCardsInWinningGames.Keys)
+            {
+                if (gameStatistics.numberOfDestinationCardsInWinningGames.ContainsKey(destinationCard))
+                {
+                    gameStatistics.numberOfDestinationCardsInWinningGames[destinationCard] += response.numberOfDestinationCardsInWinningGames[destinationCard];
+                }
+                else
+                {
+                    gameStatistics.numberOfDestinationCardsInWinningGames[destinationCard] = response.numberOfDestinationCardsInWinningGames[destinationCard];
+                }
+            }
+
+
             return gameSummaryResponse;
         }
         #endregion
@@ -724,6 +773,84 @@ namespace TicketToRide.Services
             return new ReloadableGame(game, moves, states);
         }
 
+        private (Dictionary<string, int>, Dictionary<string, int>, Dictionary<string, int>) GetNumberOfRoutesClaimedAnCitiesChosen(List<Player> players)
+        {
+            var routesClaimed = new Dictionary<string, int>();
+            var numberOfRoutesClaimedForCity = new Dictionary<string, int>();
+            var numberOfDestinationCardsInWinningGames = new Dictionary<string, int>();
+
+            foreach (var route in game.Board.Routes.Routes)
+            {
+                var routeName = $"{route.Origin}-{route.Destination}";
+                routesClaimed[routeName] = 0;
+
+                numberOfRoutesClaimedForCity[route.Origin.ToString()] = 0;
+                numberOfRoutesClaimedForCity[route.Destination.ToString()] = 0;
+                numberOfRoutesClaimedForCity[route.Destination.ToString()] = 0;
+            }
+
+            var cardsInPlayersHands = game.Players
+                .SelectMany(p => p.CompletedDestinationCards)
+                .Union(game.Players.SelectMany(p => p.PendingDestinationCards))
+                .ToList();
+
+            foreach (var destinationCard in game.Board.DestinationCards.Union(cardsInPlayersHands).ToList())
+            {
+                var name = $"{destinationCard.Origin}-{destinationCard.Destination} {destinationCard.PointValue}";
+
+                numberOfDestinationCardsInWinningGames[name] = 0;
+            }
+
+            foreach (var player in players)
+            {
+                foreach (var route in player.ClaimedRoutes.Edges.SelectMany(e => e.Routes).ToList())
+                {
+                    var routeName = $"{route.Origin}-{route.Destination}";
+                    if (routesClaimed.ContainsKey(routeName))
+                    {
+                        routesClaimed[routeName]++;
+                    }
+                    else
+                    {
+                        routesClaimed[routeName] = 1;
+                    }
+
+                    if (numberOfRoutesClaimedForCity.ContainsKey(route.Origin.ToString()))
+                    {
+                        numberOfRoutesClaimedForCity[route.Origin.ToString()]++;
+                    }
+                    else
+                    {
+                        numberOfRoutesClaimedForCity[route.Origin.ToString()] = 1;
+                    }
+
+                    if (numberOfRoutesClaimedForCity.ContainsKey(route.Destination.ToString()))
+                    {
+                        numberOfRoutesClaimedForCity[route.Destination.ToString()]++;
+                    }
+                    else
+                    {
+                        numberOfRoutesClaimedForCity[route.Destination.ToString()] = 1;
+                    }
+                }
+
+                foreach (var completedTicket in player.CompletedDestinationCards)
+                {
+                    var name = $"{completedTicket.Origin}-{completedTicket.Destination} {completedTicket.PointValue}";
+
+                    if (numberOfDestinationCardsInWinningGames.ContainsKey(name))
+                    {
+                        numberOfDestinationCardsInWinningGames[name]++;
+                    }
+                    else
+                    {
+                        numberOfDestinationCardsInWinningGames[name] = 1;
+                    }
+                }
+            }
+
+            return (routesClaimed, numberOfRoutesClaimedForCity, numberOfDestinationCardsInWinningGames);
+        }
         #endregion
 
 
@@ -969,15 +1096,23 @@ namespace TicketToRide.Services
                     reloadableGame.TrainCardsStates.CardStates.Remove(newTrainCardsState);
                 }
             }
+            var winners = GetWinner();
+
+            (Dictionary<string, int> routesClaimed,
+                Dictionary<string, int> numberOfRoutesClaimedForCity,
+                Dictionary<string, int> numberOfDestinationCardsInWinningGames) = GetNumberOfRoutesClaimedAnCitiesChosen(winners);
 
             return new RunGameResponse(
                 game.GameLog.GameLogFileName,
                 game.GameLog.InitialGameStateFileName,
                 game.GameLog.TrainCardsFileName,
+                routesClaimed,
+                numberOfRoutesClaimedForCity,
+                numberOfDestinationCardsInWinningGames,
                 true,
                 message,
                 game.Players,
-                GetWinner(),
+                winners,
                 game.LongestContPathLength,
                 game.LongestContPathPlayerIndex);
         }

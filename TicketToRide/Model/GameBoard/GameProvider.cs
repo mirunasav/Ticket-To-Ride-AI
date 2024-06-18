@@ -73,12 +73,12 @@ namespace TicketToRide.Model.GameBoard
             for (int i = 0; i < numberOfPlayers; i++)
             {
 
-                playerList.Add(InitPlayer(i, playerTypes[i], playerColors, board));
+                playerList.Add(InitPlayer(i, playerTypes[i], playerColors, board, numberOfPlayers));
             }
             return playerList;
         }
 
-        private Player InitPlayer(int index, PlayerType playerType, IList<PlayerColor> playerColors, Board board)
+        private Player InitPlayer(int index, PlayerType playerType, IList<PlayerColor> playerColors, Board board, int numberOfPlayers)
         {
             var playerColor = GetRandomColor(playerColors);
             switch (playerType)
@@ -94,7 +94,7 @@ namespace TicketToRide.Model.GameBoard
                 case PlayerType.LongestRouteBot:
                     return new LongestRouteBot($"player{index + 1}", playerColor, index, board.RouteGraph);
                 case PlayerType.EvaluationBasedBot:
-                    return new EvaluationBasedBot($"player{index + 1}", playerColor, index, board.RouteGraph);
+                    return new EvaluationBasedBot($"player{index + 1}", playerColor, index, board.RouteGraph, numberOfPlayers);
                 case PlayerType.CardHoarderBot:
                     return new CardHoarderBot($"player{index + 1}", playerColor, index);
                 default:

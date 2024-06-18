@@ -16,6 +16,13 @@
 
         public int SmallestPointDifference { get; set; } = int.MaxValue;
 
+        public Dictionary<string, int> routesClaimed { get; set; } = new Dictionary<string, int>();
+
+        public Dictionary<string, int> numberOfRoutesClaimedForCity { get; set; } = new Dictionary<string, int>();
+
+        public Dictionary<string, int> numberOfDestinationCardsInWinningGames { get; set; } = new Dictionary<string, int>();
+
+
         public void ComputePlayerPointAverage(int numberOfGames)
         {
             foreach (var key in PlayerPointAverage.Keys.ToList())

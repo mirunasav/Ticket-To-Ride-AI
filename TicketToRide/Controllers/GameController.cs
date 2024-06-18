@@ -538,6 +538,18 @@ namespace TicketToRide.Controllers
 
             gameSummaries.GameStatistics.ComputePlayerPointAverage(numberOfGames);
             gameSummaries.GameStatistics.ComputeAvgDestinationTickets(numberOfGames);
+
+            gameSummaries.GameStatistics.routesClaimed = gameSummaries.GameStatistics.routesClaimed
+               .OrderByDescending(kvp => kvp.Value)
+               .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            gameSummaries.GameStatistics.numberOfRoutesClaimedForCity = gameSummaries.GameStatistics.numberOfRoutesClaimedForCity.
+               OrderByDescending(kvp => kvp.Value)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            gameSummaries.GameStatistics.numberOfDestinationCardsInWinningGames = gameSummaries.GameStatistics.numberOfDestinationCardsInWinningGames.
+              OrderByDescending(kvp => kvp.Value)
+           .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             return Json(gameSummaries);
         }
 
