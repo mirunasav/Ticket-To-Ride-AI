@@ -1,8 +1,7 @@
 ﻿using System.Text.Json;
-using TicketToRide.Controllers;
-using TicketToRide.Controllers.GameLog;
 using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
+using TicketToRide.GameLogs;
 using TicketToRide.Helpers;
 using TicketToRide.Model.Cards;
 using TicketToRide.Model.Constants;

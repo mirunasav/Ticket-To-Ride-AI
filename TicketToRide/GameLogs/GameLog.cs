@@ -3,7 +3,7 @@ using TicketToRide.Model.Constants;
 using TicketToRide.Model.GameBoard;
 using TicketToRide.Moves;
 
-namespace TicketToRide.Controllers.GameLog
+namespace TicketToRide.GameLogs
 {
     public class GameLog
     {

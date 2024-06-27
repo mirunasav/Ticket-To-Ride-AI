@@ -1,6 +1,6 @@
 ﻿using TicketToRide.Moves;
 
-namespace TicketToRide.Controllers.GameLog
+namespace TicketToRide.GameLogs
 {
     public class BotGameLog : GameLog
     {
@@ -79,7 +79,7 @@ namespace TicketToRide.Controllers.GameLog
 
             GameLogLines.Add(gameLogLine);
             Console.WriteLine($"[#{gameLogLine.Index}] {shortMessage}");
-           
+
             if (writeToFile)
             {
                 try

@@ -1,4 +1,6 @@
-﻿namespace TicketToRide.Controllers.Responses
+﻿using TicketToRide.GameLogs;
+
+namespace TicketToRide.Controllers.Responses
 {
     public class MultipleGameResponse
     {

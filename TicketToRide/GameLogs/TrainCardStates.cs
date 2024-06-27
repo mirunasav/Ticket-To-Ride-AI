@@ -1,4 +1,4 @@
-﻿namespace TicketToRide.Controllers.GameLog
+﻿namespace TicketToRide.GameLogs
 {
     public class TrainCardStates
     {
@@ -6,6 +6,6 @@
 
         public TrainCardStates() { }
 
-        public TrainCardStates(List<TrainCardsState> cards) {  CardStates = cards; }
+        public TrainCardStates(List<TrainCardsState> cards) { CardStates = cards; }
     }
 }

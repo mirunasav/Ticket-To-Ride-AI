@@ -1,5 +1,4 @@
-﻿using TicketToRide.Controllers.GameLog;
-using TicketToRide.Model.Constants;
+﻿using TicketToRide.GameLogs;
 using TicketToRide.Model.Enums;
 using TicketToRide.Model.Players;
 

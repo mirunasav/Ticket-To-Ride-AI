@@ -1,16 +1,16 @@
-﻿namespace TicketToRide.Controllers
+﻿namespace TicketToRide.GameLogs
 {
     public class GameStatistics
     {
         public Dictionary<int, int> NumberOfGamesWonByEachPlayer { get; set; } = new Dictionary<int, int>();
 
-        public Dictionary <int, int> NumberOfLongestPathPrizes { get; set; } = new Dictionary<int, int>();
-       
-        public Dictionary <int, int> MaxPointsPerPlayer { get; set; } = new Dictionary<int, int>();
+        public Dictionary<int, int> NumberOfLongestPathPrizes { get; set; } = new Dictionary<int, int>();
 
-        public Dictionary <int, double> NumberOfFinishedDestinationTickets { get; set; } = new Dictionary<int, double>();
+        public Dictionary<int, int> MaxPointsPerPlayer { get; set; } = new Dictionary<int, int>();
 
-        public Dictionary<int, double> PlayerPointAverage { get; set; }  = new Dictionary<int, double>();
+        public Dictionary<int, double> NumberOfFinishedDestinationTickets { get; set; } = new Dictionary<int, double>();
+
+        public Dictionary<int, double> PlayerPointAverage { get; set; } = new Dictionary<int, double>();
 
         public int BiggestPointDifference { get; set; } = 0;
 

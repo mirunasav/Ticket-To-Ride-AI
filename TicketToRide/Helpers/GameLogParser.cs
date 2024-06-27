@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using TicketToRide.Controllers.GameLog;
+using TicketToRide.GameLogs;
 using TicketToRide.Model.Cards;
 using TicketToRide.Model.Enums;
 using TicketToRide.Moves;
