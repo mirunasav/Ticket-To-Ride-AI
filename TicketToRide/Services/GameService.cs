@@ -313,7 +313,6 @@ namespace TicketToRide.Services
             };
         }
 
-
         public List<Player> GetWinner()
         {
             var mostPoints = game.Players.Select(p => p.Points).Max();
@@ -781,7 +780,7 @@ namespace TicketToRide.Services
 
             foreach (var route in game.Board.Routes.Routes)
             {
-                var routeName = $"{route.Origin}-{route.Destination}";
+                var routeName = $"{route.Origin}-{route.Destination} {route.Length}";
                 routesClaimed[routeName] = 0;
 
                 numberOfRoutesClaimedForCity[route.Origin.ToString()] = 0;
@@ -805,7 +804,7 @@ namespace TicketToRide.Services
             {
                 foreach (var route in player.ClaimedRoutes.Edges.SelectMany(e => e.Routes).ToList())
                 {
-                    var routeName = $"{route.Origin}-{route.Destination}";
+                    var routeName = $"{route.Origin}-{route.Destination} {route.Length}";
                     if (routesClaimed.ContainsKey(routeName))
                     {
                         routesClaimed[routeName]++;
@@ -876,6 +875,7 @@ namespace TicketToRide.Services
         }
         #endregion
 
+        #region private
         private bool IsPlayerIndexValid(int playerIndex)
         {
             return !(game.Players.Count < playerIndex || playerIndex < 0);
@@ -1116,5 +1116,7 @@ namespace TicketToRide.Services
                 game.LongestContPathLength,
                 game.LongestContPathPlayerIndex);
         }
+
+        #endregion
     }
 }

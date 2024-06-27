@@ -93,6 +93,8 @@ namespace TicketToRide.Model.GameBoard
                     return new SimpleStrategyBot($"player{index + 1}", playerColor, index, board.RouteGraph);
                 case PlayerType.LongestRouteBot:
                     return new LongestRouteBot($"player{index + 1}", playerColor, index, board.RouteGraph);
+                case PlayerType.EvaluationBotPlus:
+                    return new EvaluationBotPlus($"player{index + 1}", playerColor, index, board.RouteGraph, numberOfPlayers);
                 case PlayerType.EvaluationBasedBot:
                     return new EvaluationBasedBot($"player{index + 1}", playerColor, index, board.RouteGraph, numberOfPlayers);
                 case PlayerType.CardHoarderBot:

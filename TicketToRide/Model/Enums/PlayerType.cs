@@ -8,6 +8,7 @@
         SimpleStrategyBot = 4,
         CardHoarderBot = 5,
         LongestRouteBot = 6,
-        EvaluationBasedBot = 7
+        EvaluationBotPlus = 7,
+        EvaluationBasedBot = 8
     }
 }

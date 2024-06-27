@@ -174,7 +174,7 @@ namespace TicketToRide.Services
                 Message = ValidMovesMessages.ValidMove
             };
         }
-
+        
         public MakeMoveResponse ValidateChooseDestinationCardsMove(ChooseDestinationCardMove chooseDestinationCardMove)
         {
             var cards = chooseDestinationCardMove.ChosenDestinationCards

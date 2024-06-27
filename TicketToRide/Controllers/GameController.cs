@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration.EnvironmentVariables;
+using System.Linq;
 using System.Text.Json;
 using TicketToRide.Controllers.Requests;
 using TicketToRide.Controllers.Responses;
@@ -637,5 +638,117 @@ namespace TicketToRide.Controllers
         }
         #endregion
 
+        #region statistics
+        [HttpGet]
+        public IActionResult GetCitiesAndDegrees()
+        {
+            City[] cities = (City[])Enum.GetValues(typeof(City));
+            Dictionary<City, int> degreeOfEachCity = new Dictionary<City, int>();
+
+            var routeSet = new HashSet<(City, City)>();
+
+            foreach (var city in cities)
+            {
+                degreeOfEachCity[city] = 0;
+            }
+
+            int numberOfPlayers = gameService.GetGameInstance().Players.Count;
+
+            foreach (var route in gameService.GetGameInstance().Board.Routes.Routes)
+            {
+                if (numberOfPlayers == 2)
+                {
+                    var routePair = (route.Origin, route.Destination);
+
+                    if (!routeSet.Contains(routePair))
+                    {
+                        routeSet.Add(routePair);
+                        var originCity = route.Origin;
+                        var destinationCity = route.Destination;
+                        degreeOfEachCity[originCity]++;
+                        degreeOfEachCity[destinationCity]++;
+                    }
+                }
+                else
+                {
+                    var originCity = route.Origin;
+                    var destinationCity = route.Destination;
+                    degreeOfEachCity[originCity]++;
+                    degreeOfEachCity[destinationCity]++;
+                }
+
+            }
+
+            degreeOfEachCity = degreeOfEachCity
+                .OrderByDescending(kvp => kvp.Value)
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            return Json(degreeOfEachCity);
+        }
+
+        [HttpGet]
+        public IActionResult GetCitiesAndScore()
+        {
+            //score calculated like : number of routes shorter than 3 + number of grey routes
+            City[] cities = (City[])Enum.GetValues(typeof(City));
+            Dictionary<City, int> scoreOfEachCity = new Dictionary<City, int>();
+
+            var routeSet = new HashSet<(City, City)>();
+
+            foreach (var city in cities)
+            {
+                scoreOfEachCity[city] = 0;
+            }
+
+            int numberOfPlayers = gameService.GetGameInstance().Players.Count;
+
+            foreach (var route in gameService.GetGameInstance().Board.Routes.Routes)
+            {
+                if (numberOfPlayers == 2)
+                {
+                    var routePair = (route.Origin, route.Destination);
+
+                    if (!routeSet.Contains(routePair))
+                    {
+                        routeSet.Add(routePair);
+                        var originCity = route.Origin;
+                        var destinationCity = route.Destination;
+                        int scoreToAdd = 0;
+                        if(route.Color == TrainColor.Grey)
+                        {
+                            scoreToAdd++;
+                        }
+                        if (route.Length <= 2)
+                        {
+                            scoreToAdd++;
+                        }
+                        scoreOfEachCity[originCity] += scoreToAdd;
+                        scoreOfEachCity[destinationCity] += scoreToAdd ;
+                    }
+                }
+                else
+                {
+                    var originCity = route.Origin;
+                    var destinationCity = route.Destination;
+                    int scoreToAdd = 0;
+                    if (route.Color == TrainColor.Grey)
+                    {
+                        scoreToAdd++;
+                    }
+                    if (route.Length <= 2)
+                    {
+                        scoreToAdd++;
+                    }
+                    scoreOfEachCity[originCity] += scoreToAdd;
+                    scoreOfEachCity[destinationCity] += scoreToAdd;
+                }
+
+            }
+
+            scoreOfEachCity = scoreOfEachCity
+                .OrderByDescending(kvp => kvp.Value)
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            return Json(scoreOfEachCity);
+        }
+        #endregion
     }
 }

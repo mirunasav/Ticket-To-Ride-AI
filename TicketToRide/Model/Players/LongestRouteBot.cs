@@ -79,6 +79,7 @@ namespace TicketToRide.Model.Players
                         {
                             return possibleClaimRouteMove;
                         }
+
                     }
                 }
                 else

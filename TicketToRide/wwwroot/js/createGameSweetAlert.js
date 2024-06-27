@@ -34,6 +34,7 @@ export async function openCreateNewGameSweetAlert() {
                                 <option value="LongestRouteBot">Longest Route Bot</option>
                                 <option value="CardHoarderBot">Card Hoarder Bot</option>
                                 <option value="EvaluationBasedBot">Evaluation Based Bot</option>
+                                <option value="EvaluationBotPlus">Evaluation Bot Plus</option>
                             </select>
                         `;
                         playerFieldsContainer.appendChild(playerField);
