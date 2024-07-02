@@ -52,6 +52,20 @@ const drawDestinationCardsButton = document.getElementById('drawDestinationCards
 const chooseDestinationsButton = document.getElementById('chooseDestinationsButton');
 const mainContainer = document.getElementById('main-container');
 
+
+window.preload = function () {
+    preloadBoard();
+}
+
+window.setup = function () {
+    setupBoard();
+}
+
+window.draw = function () {
+    drawBoard();
+}
+
+console.log('yes')
 addButtonEventListeners();
 preInitGame();
 
@@ -66,10 +80,12 @@ async function shouldReplayGame() {
             let error = await result.text();
             console.error(error);
         }
+        setTimeout(() => {}, 1000);
     }
 }
 
 async function preInitGame() {
+    setTimeout(() => {}, 3000);
     let isGameLoaded = false;
 
     let url = `http://localhost:5001/game/IsGameInitialized`;
@@ -91,8 +107,8 @@ async function preInitGame() {
             if (result) {
                 numberOfPlayers = result.numberOfPlayers;
                 playerTypes = result.playerTypes;
+                displayGame(false)
             }
-            displayGame(false)
         }
     }
     else {
@@ -146,8 +162,7 @@ async function displayGame(exists = true) {
 
     if (response.ok) {
         let responseJson = await response.json();
-        console.log(`response`);
-        console.log(responseJson)
+        
         initGameVariables(responseJson);
         initFaceUpDeck(faceUpDeck);
         initPlayerCardDeck(playerIndex)
@@ -155,7 +170,7 @@ async function displayGame(exists = true) {
         initMessagesContainer(playerTurn, playerIndex);
         initGameLog(responseJson.gameLog)
         await initPlayerDestinationCards(playerIndex);
-      
+        console.log("finish others")
         if (!intervalId) {
             intervalId = setInterval(async () => {
                 if (!updateGameStateInProgress) {
@@ -171,8 +186,14 @@ async function displayGame(exists = true) {
         }
     }
     else {
-        console.error(response);
+        await displayNothing();
     }
+}
+
+async function displayNothing() {
+    let container = document.getElementById(`main-container`);
+    container.innerHTML = '';
+    const result = await Swal.fire('Game is not available for this player index');
 }
 
 function initGameVariables(game) {
@@ -185,7 +206,6 @@ function initGameVariables(game) {
     routes = [];
     isGameAReplay = game.isGameAReplay;
 
-    console.log(game);
     for (const card of game.board.deck) {
         trainCardsDeck.push(new TrainCard(card.color, true))
     }
@@ -198,7 +218,6 @@ function initGameVariables(game) {
         destinationCardsDeck.push(new DestinationCard(card.origin, card.destination, card.pointValue));
     }
 
-    console.log("game players:", game.players)
     for (const player of game.players) {
         players.push(new Player(
             player.name,
@@ -285,7 +304,6 @@ export function initMessagesContainer(playerTurn, playerIndex) {
     var playerTurnContainer = document.getElementById('messages-container__player-turn-message');
     var playerWaitingContainer = document.getElementById('messages-container__waiting-message');
     var gameEndedContainer = document.getElementById('messages-container__game-ended-message');
-    console.log("in messages container", hasGameEnded)
     if (hasGameEnded) {
         gameEndedContainer.style.display = 'inline';
         playerTurnContainer.style.display = 'none';
@@ -360,7 +378,6 @@ async function chooseDestinationsRequest(destinations) {
         destinationCards: destinations
     };
 
-    console.log(requestBody)
 
     let response = await fetch(url, {
         method: 'POST',
@@ -372,7 +389,6 @@ async function chooseDestinationsRequest(destinations) {
 
     if (response.ok) {
         let responseJson = await response.json();
-        console.log("chosen dest", responseJson);
         hideDestinationCardsChoices();
         await updateGameState();
     }
@@ -485,10 +501,8 @@ export async function updateGameState() {
             }
         }
         else {
-            console.log("displayingGameResults", displayingGameResults)
             if (displayingGameResults == false) {
                 let gameOutcome = await getGameOutcomeRequest();
-                console.log('game outcome', gameOutcome);
                 displayWinners(gameOutcome);
             }
         }
@@ -501,11 +515,9 @@ export async function updateGameState() {
 async function updateReplayGameState() {
     if (isGameAReplay && playerIndex == 0) {
         let game = await makeNextMoveRequest();
-        console.log(game);
         let updatedGameState = await getGameStateRequest();
 
         gameState = getGameStateFromNumber(updatedGameState.gameState);
-        console.log(gameState)
         if (gameState == GameState.Ended) {
             hasGameEnded = true;
         }
@@ -559,7 +571,6 @@ export function hideMessage(isError = true, container = null, span = null) {
 function displayWinners(gameOutcome) {
     let winners = gameOutcome.winners;
     let players = gameOutcome.players;
-    console.log(gameOutcome);
     displayingGameResults = true;
 
     const currentPlayer = players[playerIndex];
@@ -587,8 +598,6 @@ function displayWinners(gameOutcome) {
 
     //if there is one winner
     if (winners.length === 1) {
-        console.log(winnerPlayers)
-        console.log(currentPlayer)
         if (winnerPlayers[0].name == currentPlayer.name) {
             message = 'You Won!';
         }
@@ -629,18 +638,6 @@ function displayWinners(gameOutcome) {
             document.getElementById("player-points").textContent = playerPoints;
         }
     });
-}
-
-window.preload = function () {
-    preloadBoard();
-}
-
-window.setup = function () {
-    setupBoard()
-}
-
-window.draw = function () {
-    drawBoard();
 }
 
 export function setGameState(state) {

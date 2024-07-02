@@ -1,11 +1,10 @@
-import { PlayerColor, TrainColor } from "./GameObjects.js";
+import { PlayerColor, } from "./GameObjects.js";
 import { hoveredCityNames } from "./destinationCards.js";
 import { cities, claimedRoutes, playerIndex, showMessage } from "./game.js";
-import { getPlayerColorFromNumber } from "./getObjectsFromEnum.js";
 import { buildColorsWithWhichRouteCanBeClaimedMessage } from "./trainCardsDeck.js";
 
-let boardImg; // Variable to store the board image
-let canvasWidth, canvasHeight; // Variables to store canvas dimensions
+let boardImg; 
+let canvasWidth, canvasHeight; 
 let boardCanvas;
 export let selectedCities = [];
 
@@ -18,18 +17,14 @@ export function preloadBoard() {
 export function setupBoard() {
     // Calculate initial canvas width and height
     canvasWidth = windowWidth / 2;
-    canvasHeight = windowHeight / 1.5;
-
+    canvasHeight = 492;
+    console.log(canvasHeight)
+    console.log(canvasWidth)
     // Create a canvas with calculated width and height
     boardCanvas = createCanvas(canvasWidth, canvasHeight);
     boardCanvas.parent('board-container')
-
-    // Position the canvas using CSS styles
-    // boardCanvas.position(0, 0); // Position relative to the top-left corner of the window
-    // boardCanvas.style('left', '100px');
-    // boardCanvas.style('top', '100px');
-
     boardCanvas.mouseClicked(handleClick);
+    console.log("finish board")
 }
 
 export function drawBoard() {
@@ -37,26 +32,24 @@ export function drawBoard() {
     if (boardImg) {
         background(255); // Clear the background
         image(boardImg, 0, 0, width, height); // Draw the board image
+        console.log(width, height)
     }
     for (const city of cities) {
         drawCityCircle(city, selectedCities.includes(city), hoveredCityNames.includes(city.name));
     }
     for (const route of claimedRoutes) {
-        console.log(claimedRoutes)
         let result = isDoubleRoute(route, claimedRoutes);
         drawClaimedRoute(route, result.isRouteDouble, result.isSecondRoute);
     }
 }
 
 window.windowResized = function () {
-    // Recalculate canvas width and height
     canvasWidth = windowWidth / 2;
     canvasHeight = windowHeight / 1.5;
 
-    // Resize the canvas
     resizeCanvas(canvasWidth, canvasHeight);
 
-    boardCanvas.position(0, 0); // Position relative to the top-left corner of the window
+    boardCanvas.position(0, 0); 
     boardCanvas.style('left', '100px');
     boardCanvas.style('top', '100px');
 }
@@ -72,17 +65,17 @@ function handleClick() {
 
 function drawCityCircle(city, isSelected = false, isDestinationHovered = false) {
     let d = dist(mouseX, mouseY, city.x, city.y);
-    // If the mouse is over the ellipse, change its color
+
     if (isDestinationHovered) {
         fill(0, 0, 0);
     }
     else if (isSelected) {
-        fill(0, 255, 0); // Change color to green
+        fill(0, 255, 0);
     }
-    else if (d < 5) { // Adjust the radius (5) as needed
-        fill(255, 0, 0); // Change color to red
+    else if (d < 5) { 
+        fill(255, 0, 0);
     } else {
-        fill(255, 255, 255); // Default color
+        fill(255, 255, 255); 
     }
 
     ellipse(city.x, city.y, 10, 10);
@@ -149,7 +142,6 @@ function drawClaimedRoute(route, isRouteDouble, isSecondRoute) {
 
     changeStroke(route.claimedBy)
 
-    // Draw the line between the points
     line(point1.x, point1.y, point2.x, point2.y);
 
     resetStroke();

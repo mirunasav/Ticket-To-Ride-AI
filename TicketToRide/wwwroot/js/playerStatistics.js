@@ -5,9 +5,8 @@ import { emptyHtmlContainer } from "./utils.js";
 export function initDisplayPlayerStatistics(players, playerIndex) {
     const currentPlayer = players[playerIndex];
 
-    // Get the container to display player statistics
     const playerStatisticsContainer = emptyHtmlContainer('all-player-stats-container');
-    // Loop through all players to create statistics
+
     for (const player of players) {
         let cssColor = getCSSColor(player.color);
 

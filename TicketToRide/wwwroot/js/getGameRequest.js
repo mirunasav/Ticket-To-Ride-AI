@@ -19,8 +19,6 @@ export async function getNewGameRequest(numberOfPlayers, playerTypes) {
         playerTypes : playerTypes
     };
     
-    console.log(requestBody);
-
     var response = await fetch(url, {
         method: 'POST',
         headers: {
